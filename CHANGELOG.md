@@ -2,6 +2,14 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.14]
+
+- Added: "Last turn" now breaks out cache-write tokens from generated output
+  when writes dominate (e.g. "5k generated + 339k cache-write"). A growing
+  conversation periodically forces a full re-cache of its context, which can
+  dwarf the actual reply and otherwise looked like an unexplainably large,
+  untrustworthy number.
+
 ## [0.2.13]
 
 - Changed: "Last turn" (formerly "Last call") for Claude now sums every API

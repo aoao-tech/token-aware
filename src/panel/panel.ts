@@ -86,9 +86,18 @@ export class DetailsPanel implements vscode.Disposable {
           <div class="value">${d.lastCall ? amount(d.lastCall.costCents, freshTokens(d.lastCall)) : "-"}</div>
           <div class="sub">${
             d.lastCall
-              ? `${formatTokens(freshTokens(d.lastCall))} tok${
-                  d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} cached` : ""
-                }`
+              ? (() => {
+                  const fresh = freshTokens(d.lastCall);
+                  const breakdown =
+                    d.lastCall.cacheWriteTokens > fresh * 0.2
+                      ? ` (${formatTokens(d.lastCall.outputTokens)} out + ${formatTokens(
+                          d.lastCall.cacheWriteTokens
+                        )} cache-write)`
+                      : "";
+                  return `${formatTokens(fresh)} tok${breakdown}${
+                    d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} cached` : ""
+                  }`;
+                })()
               : ""
           }</div>
         </div>

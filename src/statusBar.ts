@@ -139,9 +139,16 @@ export class StatusBar implements vscode.Disposable {
     }
     const last = data.lastCall;
     if (last) {
+      const fresh = freshTokens(last);
+      // Cache writes (re-caching a growing context) can dwarf the actual
+      // generated reply; break them out so a big number is explainable.
+      const breakdown =
+        last.cacheWriteTokens > fresh * 0.2
+          ? ` (${formatTokens(last.outputTokens)} generated + ${formatTokens(last.cacheWriteTokens)} cache-write)`
+          : "";
       md.appendMarkdown(
-        `Last turn: **${this.amount(data.unit, last.costCents, freshTokens(last))}** \u00b7 ${formatTokens(freshTokens(last))} tok${
-          last.cacheReadTokens ? ` (+${formatTokens(last.cacheReadTokens)} cached)` : ""
+        `Last turn: **${this.amount(data.unit, last.costCents, fresh)}** \u00b7 ${formatTokens(fresh)} tok${breakdown}${
+          last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} cached` : ""
         }`
       );
       if (last.model) {
