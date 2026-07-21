@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { shortId } from "./agents";
 import { DisplayMode, TrackerConfig } from "./config";
-import { ProviderData, ProviderUnit } from "./provider";
+import { PlanLimit, ProviderData, ProviderUnit } from "./provider";
 import { ProviderMap } from "./tracker";
 import { AgentSpend } from "./types";
 import { formatCents, formatDuration, formatTokens, freshTokens } from "./util";
@@ -71,16 +71,25 @@ export class StatusBar implements vscode.Disposable {
     if (mode !== "session") {
       parts.push(monthly);
     }
-    if (data.quotaPct != null) {
-      parts.push(`${Math.round(data.quotaPct)}%`);
+    for (const l of this.headlineLimits(data)) {
+      parts.push(`${Math.round(l.pct)}% ${l.kind === "session" ? "session" : "week"}`);
     }
     item.text = `${icon} ${parts.join(" \u00b7 ")}`;
     item.backgroundColor = this.pickBackground(data);
     item.tooltip = this.buildTooltip(data);
   }
 
+  /** Session (5h) and all-models weekly usage; per-model weekly buckets stay tooltip/panel-only. */
+  private headlineLimits(data: ProviderData): PlanLimit[] {
+    if (!data.limits?.length) {
+      return [];
+    }
+    return data.limits.filter((l) => l.kind === "session" || l.kind === "weekly-all");
+  }
+
   private pickBackground(data: ProviderData): vscode.ThemeColor | undefined {
-    const pct = data.quotaPct;
+    const headline = this.headlineLimits(data);
+    const pct = headline.length ? Math.max(...headline.map((l) => l.pct)) : data.quotaPct;
     if (pct == null) {
       return undefined;
     }

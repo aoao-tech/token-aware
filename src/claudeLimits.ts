@@ -61,18 +61,18 @@ async function readOAuthCreds(): Promise<OAuthCreds | undefined> {
   return undefined;
 }
 
-function labelFor(key: string): string {
+function legacyBucket(key: string): { label: string; kind: PlanLimit["kind"] } {
   if (key === "five_hour") {
-    return "Session (5h)";
+    return { label: "Session (5h)", kind: "session" };
   }
   if (key === "seven_day") {
-    return "Weekly (all models)";
+    return { label: "Weekly (all models)", kind: "weekly-all" };
   }
   const model = key.match(/^seven_day_(.+)$/);
   if (model) {
-    return `Weekly (${titleCase(model[1])})`;
+    return { label: `Weekly (${titleCase(model[1])})`, kind: "weekly-model" };
   }
-  return titleCase(key);
+  return { label: titleCase(key), kind: "other" };
 }
 
 /** Fetch plan-limit utilization; undefined when unavailable (API billing, stale token, endpoint change). */
@@ -118,8 +118,10 @@ export async function fetchClaudeLimits(): Promise<PlanLimit[] | undefined> {
       continue;
     }
     const resetsAt = typeof bucket.resets_at === "string" ? Date.parse(bucket.resets_at) : NaN;
+    const { label, kind } = legacyBucket(key);
     limits.push({
-      label: labelFor(key),
+      label,
+      kind,
       pct: Math.max(0, Math.min(100, bucket.utilization)),
       resetsAt: Number.isNaN(resetsAt) ? undefined : resetsAt,
     });
@@ -140,20 +142,26 @@ function parseStructuredLimits(raw: unknown): PlanLimit[] {
     const scope = l.scope as Record<string, unknown> | null | undefined;
     const model = scope?.model as Record<string, unknown> | null | undefined;
     const modelName = typeof model?.display_name === "string" ? model.display_name : undefined;
-    const kind = typeof l.kind === "string" ? l.kind : "";
+    const rawKind = typeof l.kind === "string" ? l.kind : "";
     let label: string;
-    if (kind === "session") {
+    let kind: PlanLimit["kind"];
+    if (rawKind === "session") {
       label = "Session (5h)";
-    } else if (kind === "weekly_all") {
+      kind = "session";
+    } else if (rawKind === "weekly_all") {
       label = "Weekly (all models)";
-    } else if (kind === "weekly_scoped" && modelName) {
+      kind = "weekly-all";
+    } else if (rawKind === "weekly_scoped" && modelName) {
       label = `Weekly (${modelName})`;
+      kind = "weekly-model";
     } else {
-      label = modelName ? `${titleCase(kind)} (${modelName})` : titleCase(kind);
+      label = modelName ? `${titleCase(rawKind)} (${modelName})` : titleCase(rawKind);
+      kind = "other";
     }
     const resetsAt = typeof l.resets_at === "string" ? Date.parse(l.resets_at) : NaN;
     limits.push({
       label,
+      kind,
       pct: Math.max(0, Math.min(100, l.percent)),
       resetsAt: Number.isNaN(resetsAt) ? undefined : resetsAt,
     });

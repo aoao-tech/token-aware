@@ -9,6 +9,8 @@ export interface PlanLimit {
   /** 0..100 percent used. */
   pct: number;
   resetsAt?: number;
+  /** Bucket kind, used to pick which limits headline the status bar. */
+  kind: "session" | "weekly-all" | "weekly-model" | "other";
 }
 
 /** Normalized data every provider produces, consumed by the shared UI. */
