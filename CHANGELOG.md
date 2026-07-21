@@ -1,0 +1,71 @@
+# Changelog
+
+All notable changes to the **Token Aware** extension are documented in this file.
+
+## [0.2.7]
+
+- Docs: added this changelog, following the structure VS Code's own extension
+  generator scaffolds by default
+  ([Your First Extension](https://code.visualstudio.com/api/get-started/your-first-extension)).
+
+## [0.2.6]
+
+- Fixed: dropped the calendar-month total from Claude's status bar. Claude's plan
+  limits reset on rolling 5h/7-day windows, not the calendar month, so the figure
+  no longer belongs next to the session/week percentages. Still available in the
+  tooltip and details panel. Cursor keeps its monthly figure since Cursor bills by
+  calendar month.
+
+## [0.2.5]
+
+- Fixed: plan detection no longer assumes a claude.ai login means flat-fee billing.
+  Team/Enterprise seats sign in via corporate SSO the same way Pro/Max users do,
+  with no API key ever entered, but are commonly billed per-usage. `billingType` is
+  now the primary signal; only recognized personal tiers (Free/Pro/Max) are treated
+  as flat-fee.
+
+## [0.2.4]
+
+- Fixed: sessions are now titled from their most recent message instead of their
+  first. Long-running sessions often open with a lengthy task-priming brief, which
+  made for a useless title once truncated. Falls back to Claude Code's own summary
+  entry when one exists.
+- Fixed: `truncate()` now backs up to the last word boundary instead of cutting
+  titles mid-word.
+
+## [0.2.3]
+
+- Fixed: the status bar now shows Claude's session (5h) and all-models weekly usage
+  as two explicit percentages instead of a single blended max, which could hide the
+  weekly number behind a higher per-model figure.
+
+## [0.2.2]
+
+- Added: plan-limit gauges for Claude subscription plans, the same session (5h) and
+  weekly usage percentages shown at claude.ai → Settings → Usage, with warning
+  colors at 90%/100%.
+- Fixed: hardened the status bar tooltip against markdown injection from
+  transcript-derived session titles.
+- Fixed: publisher renamed to `aoao-tech`.
+- Docs: removed em dashes from prose and tooltip text.
+
+## [0.2.1]
+
+- Fixed: headline token counts now show only newly processed tokens (fresh input +
+  output + cache writes). Cache reads, the whole conversation context re-served
+  from the prompt cache on every call, are shown separately as "cached" so a
+  200-token reply no longer displays as a 100k-token call.
+
+## [0.2.0]
+
+- Renamed the project to **Token Aware** (from "Cursor Token Spend Tracker").
+- Added: auto-detection of installed tools (Cursor, Claude Code) and of billing
+  plan (subscription vs. per-usage) to pick dollars or tokens automatically.
+- Added: Claude session list scoped to the open workspace by default, with real
+  session titles resolved from transcripts instead of raw IDs; subagent/sidechain
+  transcripts excluded from the list.
+
+## [0.1.0]
+
+- Initial release: live Cursor and Claude Code token/dollar spend in the status
+  bar, with a details panel showing spend by session and top models.
