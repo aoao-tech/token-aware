@@ -10,8 +10,10 @@ don't appear.
 
 ## What it does
 
-- One status bar item per detected tool, e.g. `⚡ $1.93 session · $0.42 last · $1301.81 mo`
-  (Cursor) and `✨ 45.2k session · 122k last · 2.3M mo` (Claude).
+- One status bar item per detected tool, e.g. `⚡ $1.93 session · $0.42 last · $1301.81 mo · 62%`
+  (Cursor, `mo` is a real calendar-month total, `%` is the premium-request quota) and
+  `✨ 45.2k session · 922 last · 43% session · 9% week` (Claude, no monthly figure since
+  Claude's plan limits reset on rolling 5h/7-day windows rather than the calendar month).
 - **Auto plan detection**: figures out whether you're on a flat monthly plan (Claude
   Free/Pro/Max, Cursor individual plans → shows tokens) or per-usage billing (API keys,
   Claude Team/Enterprise seats, Cursor enterprise/business → shows dollars). Signing in

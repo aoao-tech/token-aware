@@ -2,6 +2,15 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.8]
+
+- Fixed: restored Cursor's premium-request quota percentage in the status bar text.
+  It was silently dropped when 0.2.3 split the badge into per-bucket labels for
+  Claude; Cursor doesn't have kind-tagged limit buckets, so it now falls back to
+  the single `%` figure it always had.
+- Docs: corrected the README's status bar example, which still showed Claude with
+  a monthly total and no plan-limit percentages.
+
 ## [0.2.7]
 
 - Docs: added this changelog, following the structure VS Code's own extension

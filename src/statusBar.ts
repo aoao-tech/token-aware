@@ -71,8 +71,15 @@ export class StatusBar implements vscode.Disposable {
     if (mode !== "session" && data.monthlyMatchesBillingCycle !== false) {
       parts.push(monthly);
     }
-    for (const l of this.headlineLimits(data)) {
-      parts.push(`${Math.round(l.pct)}% ${l.kind === "session" ? "session" : "week"}`);
+    const headline = this.headlineLimits(data);
+    if (headline.length) {
+      for (const l of headline) {
+        parts.push(`${Math.round(l.pct)}% ${l.kind === "session" ? "session" : "week"}`);
+      }
+    } else if (data.quotaPct != null) {
+      // Providers without kind-tagged limit buckets (Cursor) still get a
+      // single premium-request quota percentage.
+      parts.push(`${Math.round(data.quotaPct)}%`);
     }
     item.text = `${icon} ${parts.join(" \u00b7 ")}`;
     item.backgroundColor = this.pickBackground(data);
