@@ -42,13 +42,13 @@ export class StatusBar implements vscode.Disposable {
     const icon = `$(${data.icon})`;
     if (data.status === "no-auth") {
       item.text = `${icon} ${data.label}: n/a`;
-      item.tooltip = new vscode.MarkdownString(`**${data.label}**\n\n${data.error ?? "Unavailable."}`);
+      item.tooltip = new vscode.MarkdownString(`**${data.label}**\n\n${escapeMd(data.error ?? "Unavailable.")}`);
       item.backgroundColor = undefined;
       return;
     }
     if (data.status === "error" && !data.currentAgent && data.monthlyTokens === 0) {
       item.text = `${icon} ${data.label} $(error)`;
-      item.tooltip = new vscode.MarkdownString(`**${data.label}**\n\n${data.error ?? "Refresh failed."}`);
+      item.tooltip = new vscode.MarkdownString(`**${data.label}**\n\n${escapeMd(data.error ?? "Refresh failed.")}`);
       return;
     }
 
@@ -93,8 +93,9 @@ export class StatusBar implements vscode.Disposable {
     return undefined;
   }
 
+  /** Tooltip-safe label: session titles come from transcript content. */
   private label(a: AgentSpend): string {
-    return a.title ?? shortId(a.conversationId);
+    return escapeMd(a.title ?? shortId(a.conversationId));
   }
 
   private amount(unit: ProviderUnit, costCents: number | undefined, tokens: number): string {
@@ -102,8 +103,8 @@ export class StatusBar implements vscode.Disposable {
   }
 
   private buildTooltip(data: ProviderData): vscode.MarkdownString {
+    // Deliberately NOT trusted: interpolated titles come from transcripts.
     const md = new vscode.MarkdownString();
-    md.isTrusted = true;
     md.appendMarkdown(`**${data.label} token usage**\n\n`);
     if (data.planLabel) {
       md.appendMarkdown(`Plan: **${data.planLabel}**\n\n`);
@@ -126,7 +127,7 @@ export class StatusBar implements vscode.Disposable {
         }`
       );
       if (last.model) {
-        md.appendMarkdown(` \u00b7 ${last.model}`);
+        md.appendMarkdown(` \u00b7 ${escapeMd(last.model)}`);
       }
       md.appendMarkdown(`\n\n`);
     }
@@ -153,7 +154,7 @@ export class StatusBar implements vscode.Disposable {
       }
     }
     if (data.status === "error") {
-      md.appendMarkdown(`\u26a0 Last refresh failed: ${data.error}\n\n`);
+      md.appendMarkdown(`\u26a0 Last refresh failed: ${escapeMd(data.error ?? "")}\n\n`);
     }
     md.appendMarkdown(`_Click for details_`);
     return md;
@@ -165,4 +166,9 @@ export class StatusBar implements vscode.Disposable {
     }
     this.items.clear();
   }
+}
+
+/** Escape markdown control characters in externally-derived text. */
+function escapeMd(s: string): string {
+  return s.replace(/[\\`*_[\]()<>#|~]/g, (ch) => `\\${ch}`);
 }
