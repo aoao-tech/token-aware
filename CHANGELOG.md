@@ -2,6 +2,13 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.9]
+
+- Fixed: plan-limit fetch failures are no longer silently swallowed. Genuine
+  errors (network, HTTP, unexpected response shape) are now surfaced in the
+  tooltip as "Plan limits unavailable: ...", distinct from the expected case
+  of not being logged in with a plan that has limits at all.
+
 ## [0.2.8]
 
 - Fixed: restored Cursor's premium-request quota percentage in the status bar text.

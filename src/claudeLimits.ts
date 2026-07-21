@@ -11,9 +11,17 @@ const execFileAsync = promisify(execFile);
 /**
  * The endpoint Claude Code's own /usage screen reads: plan-limit utilization
  * (5-hour session + weekly buckets) for subscription accounts. Unofficial,
- * so every failure path returns undefined and the UI simply omits gauges.
+ * so every failure path fails soft; genuine errors (network, HTTP, unexpected
+ * shape) are still reported back so the UI can explain why gauges vanished,
+ * rather than a silent, undiagnosable gap.
  */
 const USAGE_URL = "https://api.anthropic.com/api/oauth/usage";
+
+export interface ClaudeLimitsResult {
+  limits?: PlanLimit[];
+  /** Set only for unexpected failures; absence of credentials is not an error. */
+  error?: string;
+}
 
 interface OAuthCreds {
   accessToken: string;
@@ -75,15 +83,15 @@ function legacyBucket(key: string): { label: string; kind: PlanLimit["kind"] } {
   return { label: titleCase(key), kind: "other" };
 }
 
-/** Fetch plan-limit utilization; undefined when unavailable (API billing, stale token, endpoint change). */
-export async function fetchClaudeLimits(): Promise<PlanLimit[] | undefined> {
+/** Fetch plan-limit utilization. Absence of credentials is expected (API billing); other failures report why. */
+export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
   const creds = await readOAuthCreds();
   if (!creds) {
-    return undefined;
+    return {};
   }
   // A stale token would just 401; Claude Code refreshes it on next use.
   if (creds.expiresAt && creds.expiresAt <= Date.now()) {
-    return undefined;
+    return {};
   }
 
   let data: Record<string, unknown>;
@@ -97,17 +105,17 @@ export async function fetchClaudeLimits(): Promise<PlanLimit[] | undefined> {
       signal: AbortSignal.timeout(7000),
     });
     if (!res.ok) {
-      return undefined;
+      return { error: `usage endpoint returned HTTP ${res.status}` };
     }
     data = (await res.json()) as Record<string, unknown>;
-  } catch {
-    return undefined;
+  } catch (err) {
+    return { error: `usage request failed: ${err instanceof Error ? err.message : String(err)}` };
   }
 
   // Preferred: the structured `limits` array (includes model-scoped buckets).
   const structured = parseStructuredLimits(data.limits);
   if (structured.length) {
-    return structured;
+    return { limits: structured };
   }
 
   // Fallback for older response shapes: top-level utilization buckets.
@@ -126,7 +134,7 @@ export async function fetchClaudeLimits(): Promise<PlanLimit[] | undefined> {
       resetsAt: Number.isNaN(resetsAt) ? undefined : resetsAt,
     });
   }
-  return limits.length ? limits : undefined;
+  return limits.length ? { limits } : { error: "usage response had no recognizable limit buckets" };
 }
 
 function parseStructuredLimits(raw: unknown): PlanLimit[] {

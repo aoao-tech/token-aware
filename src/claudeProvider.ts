@@ -3,11 +3,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { extractText, groupAgents, truncate } from "./agents";
-import { fetchClaudeLimits } from "./claudeLimits";
+import { ClaudeLimitsResult, fetchClaudeLimits } from "./claudeLimits";
 import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
 import { AgentScope, getConfig, UnitSetting } from "./config";
-import { PlanLimit, Provider, ProviderData, ProviderUnit } from "./provider";
+import { Provider, ProviderData, ProviderUnit } from "./provider";
 import { ModelAggregate, UsageEvent } from "./types";
 import { freshTokens } from "./util";
 import { JsonlWatcher } from "./watcher";
@@ -39,7 +39,7 @@ export class ClaudeProvider implements Provider {
   private currentId: string | undefined;
   private plan: ClaudePlan | undefined;
   private planChecked = false;
-  private limitsCache: { at: number; limits?: PlanLimit[] } | undefined;
+  private limitsCache: { at: number; result: ClaudeLimitsResult } | undefined;
   private readonly fileCache = new Map<string, FileCacheEntry>();
   private readonly sessionMeta = new Map<string, SessionMeta>();
 
@@ -125,7 +125,7 @@ export class ClaudeProvider implements Provider {
       };
     }
 
-    const limits = await this.getLimits();
+    const { limits, error: limitsError } = await this.getLimits();
 
     return {
       ...base,
@@ -137,19 +137,20 @@ export class ClaudeProvider implements Provider {
       monthlyCostCents,
       models: aggregateModels(events),
       limits,
+      limitsError,
       quotaPct: limits?.length ? Math.max(...limits.map((l) => l.pct)) : undefined,
     };
   }
 
   /** Plan-limit gauges, cached briefly so polling doesn't hammer the endpoint. */
-  private async getLimits(): Promise<PlanLimit[] | undefined> {
+  private async getLimits(): Promise<ClaudeLimitsResult> {
     const now = Date.now();
     if (this.limitsCache && now - this.limitsCache.at < 60_000) {
-      return this.limitsCache.limits;
+      return this.limitsCache.result;
     }
-    const limits = await fetchClaudeLimits();
-    this.limitsCache = { at: now, limits };
-    return limits;
+    const result = await fetchClaudeLimits();
+    this.limitsCache = { at: now, result };
+    return result;
   }
 
   /** "auto" resolves from the local login's billing type; tokens when unknown. */

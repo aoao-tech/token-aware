@@ -168,6 +168,8 @@ export class StatusBar implements vscode.Disposable {
             : "";
         md.appendMarkdown(`\u00b7 ${l.label}: **${Math.round(l.pct)}%** used${resets}\n\n`);
       }
+    } else if (data.limitsError) {
+      md.appendMarkdown(`\u26a0 Plan limits unavailable: ${escapeMd(data.limitsError)}\n\n`);
     }
     if (data.status === "error") {
       md.appendMarkdown(`\u26a0 Last refresh failed: ${escapeMd(data.error ?? "")}\n\n`);

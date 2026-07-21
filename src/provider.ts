@@ -45,6 +45,8 @@ export interface ProviderData {
   models?: ModelAggregate[];
   /** Plan-limit gauges (session/weekly buckets), when the plan has limits. */
   limits?: PlanLimit[];
+  /** Why plan-limit gauges are missing, when it's an unexpected failure rather than N/A. */
+  limitsError?: string;
   quotaPct?: number;
   error?: string;
   updatedAt: number;

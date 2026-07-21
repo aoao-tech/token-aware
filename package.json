@@ -2,7 +2,7 @@
   "name": "token-aware",
   "displayName": "Token Aware",
   "description": "Live AI token/dollar usage in the status bar. Auto-detects Cursor and Claude Code, your plan type, and shows per-session, last-call, and monthly spend.",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "publisher": "aoao-tech",
   "license": "MIT",
   "repository": {
