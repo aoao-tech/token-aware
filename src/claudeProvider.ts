@@ -234,7 +234,7 @@ export class ClaudeProvider implements Provider {
     const byRequest = new Map<string, UsageEvent>();
     let cwd: string | undefined;
     let summaryTitle: string | undefined;
-    let firstUserText: string | undefined;
+    let lastUserText: string | undefined;
     let sidechain = false;
 
     let content = "";
@@ -257,8 +257,10 @@ export class ClaudeProvider implements Provider {
         }
         continue;
       }
-      // Fallback title: the first real user message (skip tool results/meta).
-      if (!firstUserText && trimmed.includes('"type":"user"') && !trimmed.includes('"toolUseResult"')) {
+      // Fallback title: the most recent real user message (skip tool results/meta),
+      // which represents what the session is currently about far better than the
+      // first message, since sessions often open with a long task-priming brief.
+      if (trimmed.includes('"type":"user"') && !trimmed.includes('"toolUseResult"')) {
         const obj = tryParse(trimmed);
         if (obj && obj.type === "user" && obj.isMeta !== true) {
           if (obj.isSidechain === true) {
@@ -270,7 +272,7 @@ export class ClaudeProvider implements Provider {
           const message = obj.message as Record<string, unknown> | undefined;
           const text = extractText(message?.content)?.replace(/\s+/g, " ").trim();
           if (text && !text.startsWith("<")) {
-            firstUserText = text;
+            lastUserText = text;
           }
         }
         continue;
@@ -322,7 +324,7 @@ export class ClaudeProvider implements Provider {
       size: stat.size,
       events: [...byRequest.values()],
       cwd,
-      title: summaryTitle ?? firstUserText,
+      title: summaryTitle ?? lastUserText,
       sidechain,
     };
     this.fileCache.set(full, entry);

@@ -113,8 +113,15 @@ export function extractText(v: unknown): string | undefined {
   return undefined;
 }
 
+/** Truncate to `n` chars, backing up to the last word boundary so titles don't cut mid-word. */
 export function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n - 1)}\u2026` : s;
+  if (s.length <= n) {
+    return s;
+  }
+  const cut = s.slice(0, n - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const boundary = lastSpace > n * 0.6 ? lastSpace : cut.length;
+  return `${cut.slice(0, boundary)}\u2026`;
 }
 
 export function shortId(conversationId: string): string {
