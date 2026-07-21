@@ -27,10 +27,11 @@ export class StatusBar implements vscode.Disposable {
   private ensureItem(id: string, index: number): vscode.StatusBarItem {
     let item = this.items.get(id);
     if (!item) {
-      // Right-aligned, low priority => far-right edge of the status bar, so it
-      // doesn't rearrange the familiar left-side items. Lower priority sits
-      // further right, so earlier providers (lower index) stay to the left.
-      item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, -10 - index);
+      // Left-aligned, modest priority => sits just right of VS Code's built-in
+      // Problems (errors/warnings) indicator, which uses a much higher
+      // priority and so stays leftmost. Higher priority is further left, so
+      // earlier providers (lower index) land closer to Problems.
+      item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100 - index);
       item.command = "tokenAware.showDetails";
       item.show();
       this.items.set(id, item);

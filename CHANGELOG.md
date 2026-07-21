@@ -2,6 +2,11 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.10]
+
+- Changed: status bar items moved from the far right to the left side, right
+  next to VS Code's built-in Problems (errors/warnings) indicator.
+
 ## [0.2.9]
 
 - Fixed: plan-limit fetch failures are no longer silently swallowed. Genuine
