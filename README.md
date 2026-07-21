@@ -23,6 +23,9 @@ don't appear.
 - Claude session list is scoped to your open workspace by default (background runs,
   subagents, and other projects are excluded from the list; monthly totals still
   count everything).
+- **Plan-limit gauges** (Claude subscription plans): the same session (5h) and
+  weekly usage percentages shown at claude.ai → Settings → Usage, right in the
+  status bar — with warning colors at 90% and 100%.
 - **Honest token counting**: the headline number is tokens the model *newly
   processed* (fresh input + output + cache writes). Cache reads — the whole
   conversation context re-served from the prompt cache on every call, at ~10% of
@@ -100,9 +103,11 @@ Install the `.vsix` via the Extensions view → `...` → **Install from VSIX...
 ## Privacy
 
 Everything runs locally. The Cursor provider only talks to `cursor.com` (the same host
-Cursor itself uses); the Claude provider makes no network calls at all. No third-party
-telemetry. Auth tokens are read at runtime and never stored or transmitted anywhere
-except to the tool's own backend.
+Cursor itself uses). The Claude provider reads transcripts entirely locally; for
+subscription accounts it makes one authenticated call to `api.anthropic.com` (the same
+endpoint Claude Code's own /usage screen uses) to show plan-limit percentages. No
+third-party telemetry. Auth tokens are read at runtime and never stored or transmitted
+anywhere except to the tool's own backend.
 
 ## Notes / disclaimers
 

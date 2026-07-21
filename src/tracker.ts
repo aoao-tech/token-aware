@@ -74,6 +74,8 @@ export class Tracker implements vscode.Disposable {
         monthlyTokens: prev?.monthlyTokens ?? 0,
         monthlyCacheTokens: prev?.monthlyCacheTokens,
         monthlyCostCents: prev?.monthlyCostCents,
+        limits: prev?.limits,
+        quotaPct: prev?.quotaPct,
         error: err instanceof Error ? err.message : String(err),
         updatedAt: Date.now(),
       });

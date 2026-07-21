@@ -3,6 +3,14 @@ import { AgentSpend, ModelAggregate, UsageEvent } from "./types";
 export type ProviderUnit = "dollars" | "tokens";
 export type ProviderStatus = "ok" | "error" | "no-auth" | "disabled";
 
+/** One usage-limit bucket, e.g. the 5-hour session or a weekly cap. */
+export interface PlanLimit {
+  label: string;
+  /** 0..100 percent used. */
+  pct: number;
+  resetsAt?: number;
+}
+
 /** Normalized data every provider produces, consumed by the shared UI. */
 export interface ProviderData {
   id: string;
@@ -25,6 +33,8 @@ export interface ProviderData {
   monthlyCacheTokens?: number;
   monthlyCostCents?: number;
   models?: ModelAggregate[];
+  /** Plan-limit gauges (session/weekly buckets), when the plan has limits. */
+  limits?: PlanLimit[];
   quotaPct?: number;
   error?: string;
   updatedAt: number;

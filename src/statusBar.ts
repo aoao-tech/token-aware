@@ -4,7 +4,7 @@ import { DisplayMode, TrackerConfig } from "./config";
 import { ProviderData, ProviderUnit } from "./provider";
 import { ProviderMap } from "./tracker";
 import { AgentSpend } from "./types";
-import { formatCents, formatTokens, freshTokens } from "./util";
+import { formatCents, formatDuration, formatTokens, freshTokens } from "./util";
 
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
@@ -70,6 +70,9 @@ export class StatusBar implements vscode.Disposable {
     }
     if (mode !== "session") {
       parts.push(monthly);
+    }
+    if (data.quotaPct != null) {
+      parts.push(`${Math.round(data.quotaPct)}%`);
     }
     item.text = `${icon} ${parts.join(" \u00b7 ")}`;
     item.backgroundColor = this.pickBackground(data);
@@ -139,6 +142,16 @@ export class StatusBar implements vscode.Disposable {
         data.monthlyCacheTokens ? ` (+${formatTokens(data.monthlyCacheTokens)} cached)` : ""
       }\n\n`
     );
+    if (data.limits?.length) {
+      md.appendMarkdown(`Plan limits:\n\n`);
+      for (const l of data.limits) {
+        const resets =
+          l.resetsAt && l.resetsAt > Date.now()
+            ? ` \u00b7 resets in ${formatDuration(l.resetsAt - Date.now())}`
+            : "";
+        md.appendMarkdown(`\u00b7 ${l.label}: **${Math.round(l.pct)}%** used${resets}\n\n`);
+      }
+    }
     if (data.status === "error") {
       md.appendMarkdown(`\u26a0 Last refresh failed: ${data.error}\n\n`);
     }

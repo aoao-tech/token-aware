@@ -3,7 +3,7 @@ import { shortId } from "../agents";
 import { ProviderData } from "../provider";
 import { ProviderMap } from "../tracker";
 import { AgentSpend } from "../types";
-import { formatCents, formatTokens, freshTokens } from "../util";
+import { formatCents, formatDuration, formatTokens, freshTokens } from "../util";
 
 export class DetailsPanel implements vscode.Disposable {
   private static current: DetailsPanel | undefined;
@@ -94,6 +94,22 @@ export class DetailsPanel implements vscode.Disposable {
         </div>
       </div>
 
+      ${
+        d.limits?.length
+          ? `<h2>Plan limits</h2><table>${d.limits
+              .map((l) => {
+                const resets =
+                  l.resetsAt && l.resetsAt > Date.now()
+                    ? `resets in ${formatDuration(l.resetsAt - Date.now())}`
+                    : "";
+                return `<tr><td>${escapeHtml(l.label)}</td><td><div class="bar"><div style="width:${Math.round(
+                  Math.min(100, l.pct)
+                )}%"></div></div></td><td>${Math.round(l.pct)}% used</td><td>${resets}</td></tr>`;
+              })
+              .join("")}</table>`
+          : ""
+      }
+
       <h2>Spend by session</h2>
       ${
         d.agents.length
@@ -153,6 +169,8 @@ export class DetailsPanel implements vscode.Disposable {
   td, th { text-align: left; padding: 3px 16px 3px 0; }
   th { opacity: 0.7; font-weight: 500; }
   .foot { margin-top: 20px; font-size: 0.8em; opacity: 0.6; }
+  .bar { width: 180px; height: 6px; border-radius: 3px; background: var(--vscode-editorWidget-border, #444); overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 3px; background: var(--vscode-progressBar-background, #0e70c0); }
 </style>
 </head>
 <body>${body}</body>
