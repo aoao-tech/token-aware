@@ -3,7 +3,7 @@ import { UsageEvent } from "./types";
 /**
  * Tokens the model newly processed in a call: fresh input, generated output,
  * and cache writes. Cache READS (the whole conversation context re-served
- * from cache on every call) are excluded — they dwarf the intuitive "how much
+ * from cache on every call) are excluded; they dwarf the intuitive "how much
  * did this call use" number and are billed at a fraction of the input price.
  */
 export function freshTokens(e: UsageEvent): number {

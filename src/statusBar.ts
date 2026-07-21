@@ -134,7 +134,7 @@ export class StatusBar implements vscode.Disposable {
     if (others.length) {
       md.appendMarkdown(`Recent sessions:\n\n`);
       for (const a of others) {
-        md.appendMarkdown(`\u00b7 ${this.label(a)} — ${this.amount(data.unit, a.costCents, a.tokens)}\n\n`);
+        md.appendMarkdown(`\u00b7 ${this.label(a)}: ${this.amount(data.unit, a.costCents, a.tokens)}\n\n`);
       }
     }
     md.appendMarkdown(

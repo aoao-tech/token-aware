@@ -1,7 +1,7 @@
 # Token Aware
 
 A VS Code / Cursor extension that keeps your **AI token/dollar usage visible in the
-status bar in real time** — so you stay aware of how much you're burning without
+status bar in real time**, so you stay aware of how much you're burning without
 opening a usage dashboard.
 
 It auto-detects which tools you use (**Cursor**, **Claude Code**, or both) and shows
@@ -19,24 +19,24 @@ don't appear.
   "current" the moment you send a message in it.
 - Updates on a poll interval **and** instantly right after each AI turn.
 - Click it for a details panel: current session, spend-by-session table, monthly
-  totals, and top models — per tool.
+  totals, and top models, per tool.
 - Claude session list is scoped to your open workspace by default (background runs,
   subagents, and other projects are excluded from the list; monthly totals still
   count everything).
 - **Plan-limit gauges** (Claude subscription plans): the same session (5h) and
   weekly usage percentages shown at claude.ai → Settings → Usage, right in the
-  status bar — with warning colors at 90% and 100%.
+  status bar, with warning colors at 90% and 100%.
 - **Honest token counting**: the headline number is tokens the model *newly
-  processed* (fresh input + output + cache writes). Cache reads — the whole
+  processed* (fresh input + output + cache writes). Cache reads (the whole
   conversation context re-served from the prompt cache on every call, at ~10% of
-  the input price — are shown separately as "cached" so a 200-token reply doesn't
+  the input price) are shown separately as "cached" so a 200-token reply doesn't
   masquerade as a 100k-token call.
 
 ## How it works
 
 ### Cursor
 Cursor doesn't store real per-request token counts locally (the chat DB records zeros),
-so the numbers come from **Cursor's own usage backend** — the same data behind
+so the numbers come from **Cursor's own usage backend**, the same data behind
 [cursor.com/dashboard/usage](https://cursor.com/dashboard/usage):
 
 1. Reads your local session token from Cursor's state DB
@@ -53,7 +53,7 @@ every assistant message includes an exact `usage` block. So this provider is **f
 local, accurate, and needs no auth**: it reads those files, dedupes streamed chunks by
 `requestId`, groups by session, resolves session titles, and (optionally) converts tokens
 to dollars with a bundled Anthropic pricing table. Plan detection reads the local Claude
-Code login metadata (subscription vs. API billing) — nothing leaves your machine.
+Code login metadata (subscription vs. API billing); nothing leaves your machine.
 
 > Note: neither editor exposes the focused chat tab to extensions, so "current session"
 > means the conversation you most recently interacted with (it updates as soon as you
@@ -117,7 +117,7 @@ anywhere except to the tool's own backend.
 - Claude dollar amounts are **estimates** from a bundled pricing table
   (`src/claudePricing.ts`); token counts are exact.
 - Plan auto-detection is heuristic (e.g. an enterprise seat without usage-based billing
-  is still shown in dollars) — use the `unit` settings to override.
+  is still shown in dollars); use the `unit` settings to override.
 
 ## License
 
