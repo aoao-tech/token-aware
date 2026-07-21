@@ -4,7 +4,7 @@ import { DisplayMode, TrackerConfig } from "./config";
 import { ProviderData, ProviderUnit } from "./provider";
 import { ProviderMap } from "./tracker";
 import { AgentSpend } from "./types";
-import { formatCents, formatTokens } from "./util";
+import { formatCents, formatTokens, freshTokens } from "./util";
 
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
@@ -57,7 +57,7 @@ export class StatusBar implements vscode.Disposable {
 
     const agent = `${fmtAmount(data.currentAgent?.costCents, data.currentAgent?.tokens ?? 0)} session`;
     const last = data.lastCall
-      ? `${fmtAmount(data.lastCall.costCents, data.lastCall.totalTokens)} last`
+      ? `${fmtAmount(data.lastCall.costCents, freshTokens(data.lastCall))} last`
       : undefined;
     const monthly = `${fmtAmount(data.monthlyCostCents, data.monthlyTokens)} mo`;
 
@@ -110,13 +110,17 @@ export class StatusBar implements vscode.Disposable {
     if (cur) {
       md.appendMarkdown(`Current session: **${this.label(cur)}**\n\n`);
       md.appendMarkdown(
-        `\u2937 **${this.amount(data.unit, cur.costCents, cur.tokens)}** \u00b7 ${formatTokens(cur.tokens)} tok \u00b7 ${cur.count} calls\n\n`
+        `\u2937 **${this.amount(data.unit, cur.costCents, cur.tokens)}** \u00b7 ${formatTokens(cur.tokens)} tok${
+          cur.cacheTokens ? ` (+${formatTokens(cur.cacheTokens)} cached)` : ""
+        } \u00b7 ${cur.count} calls\n\n`
       );
     }
     const last = data.lastCall;
     if (last) {
       md.appendMarkdown(
-        `Last call: **${this.amount(data.unit, last.costCents, last.totalTokens)}** \u00b7 ${formatTokens(last.totalTokens)} tok`
+        `Last call: **${this.amount(data.unit, last.costCents, freshTokens(last))}** \u00b7 ${formatTokens(freshTokens(last))} tok${
+          last.cacheReadTokens ? ` (+${formatTokens(last.cacheReadTokens)} cached)` : ""
+        }`
       );
       if (last.model) {
         md.appendMarkdown(` \u00b7 ${last.model}`);
@@ -131,7 +135,9 @@ export class StatusBar implements vscode.Disposable {
       }
     }
     md.appendMarkdown(
-      `This month: **${this.amount(data.unit, data.monthlyCostCents, data.monthlyTokens)}** \u00b7 ${formatTokens(data.monthlyTokens)} tok\n\n`
+      `This month: **${this.amount(data.unit, data.monthlyCostCents, data.monthlyTokens)}** \u00b7 ${formatTokens(data.monthlyTokens)} tok${
+        data.monthlyCacheTokens ? ` (+${formatTokens(data.monthlyCacheTokens)} cached)` : ""
+      }\n\n`
     );
     if (data.status === "error") {
       md.appendMarkdown(`\u26a0 Last refresh failed: ${data.error}\n\n`);

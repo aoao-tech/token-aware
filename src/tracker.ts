@@ -72,6 +72,7 @@ export class Tracker implements vscode.Disposable {
         agents: prev?.agents ?? [],
         lastCall: prev?.lastCall,
         monthlyTokens: prev?.monthlyTokens ?? 0,
+        monthlyCacheTokens: prev?.monthlyCacheTokens,
         monthlyCostCents: prev?.monthlyCostCents,
         error: err instanceof Error ? err.message : String(err),
         updatedAt: Date.now(),

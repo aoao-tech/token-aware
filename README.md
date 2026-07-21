@@ -23,6 +23,11 @@ don't appear.
 - Claude session list is scoped to your open workspace by default (background runs,
   subagents, and other projects are excluded from the list; monthly totals still
   count everything).
+- **Honest token counting**: the headline number is tokens the model *newly
+  processed* (fresh input + output + cache writes). Cache reads — the whole
+  conversation context re-served from the prompt cache on every call, at ~10% of
+  the input price — are shown separately as "cached" so a 200-token reply doesn't
+  masquerade as a 100k-token call.
 
 ## How it works
 

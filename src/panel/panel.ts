@@ -3,7 +3,7 @@ import { shortId } from "../agents";
 import { ProviderData } from "../provider";
 import { ProviderMap } from "../tracker";
 import { AgentSpend } from "../types";
-import { formatCents, formatTokens } from "../util";
+import { formatCents, formatTokens, freshTokens } from "../util";
 
 export class DetailsPanel implements vscode.Disposable {
   private static current: DetailsPanel | undefined;
@@ -77,26 +77,34 @@ export class DetailsPanel implements vscode.Disposable {
         <div class="card">
           <div class="label">This month</div>
           <div class="value">${amount(d.monthlyCostCents, d.monthlyTokens)}</div>
-          <div class="sub">${formatTokens(d.monthlyTokens)} tokens</div>
+          <div class="sub">${formatTokens(d.monthlyTokens)} tokens${
+            d.monthlyCacheTokens ? ` · ${formatTokens(d.monthlyCacheTokens)} cached` : ""
+          }</div>
         </div>
         <div class="card">
           <div class="label">Last call</div>
-          <div class="value">${d.lastCall ? amount(d.lastCall.costCents, d.lastCall.totalTokens) : "-"}</div>
-          <div class="sub">${d.lastCall ? `${formatTokens(d.lastCall.totalTokens)} tok` : ""}</div>
+          <div class="value">${d.lastCall ? amount(d.lastCall.costCents, freshTokens(d.lastCall)) : "-"}</div>
+          <div class="sub">${
+            d.lastCall
+              ? `${formatTokens(freshTokens(d.lastCall))} tok${
+                  d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} cached` : ""
+                }`
+              : ""
+          }</div>
         </div>
       </div>
 
       <h2>Spend by session</h2>
       ${
         d.agents.length
-          ? `<table><tr><th></th><th>Session</th>${showCost ? "<th>Cost</th>" : ""}<th>Tokens</th><th>Calls</th><th>Last active</th></tr>${d.agents
+          ? `<table><tr><th></th><th>Session</th>${showCost ? "<th>Cost</th>" : ""}<th>Tokens</th><th>Cached</th><th>Calls</th><th>Last active</th></tr>${d.agents
               .map(
                 (a) =>
                   `<tr><td>${a.isCurrent ? "\u25b6" : ""}</td><td>${escapeHtml(
                     this.label(a)
                   )}</td>${showCost ? `<td>${formatCents(a.costCents)}</td>` : ""}<td>${formatTokens(
                     a.tokens
-                  )}</td><td>${a.count}</td><td>${fmtTime(a.lastTs)}</td></tr>`
+                  )}</td><td>${formatTokens(a.cacheTokens)}</td><td>${a.count}</td><td>${fmtTime(a.lastTs)}</td></tr>`
               )
               .join("")}</table>`
           : "<p>No session activity in the fetched window.</p>"
@@ -105,12 +113,12 @@ export class DetailsPanel implements vscode.Disposable {
       <h2>Top models (month)</h2>
       ${
         models.length
-          ? `<table><tr><th>Model</th><th>Tokens</th>${showCost ? "<th>Cost</th>" : ""}</tr>${models
+          ? `<table><tr><th>Model</th><th>Tokens</th><th>Cached</th>${showCost ? "<th>Cost</th>" : ""}</tr>${models
               .map(
                 (m) =>
-                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td>${
-                    showCost ? `<td>${formatCents(m.costCents)}</td>` : ""
-                  }</tr>`
+                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td><td>${formatTokens(
+                    m.cacheTokens ?? 0
+                  )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
               )
               .join("")}</table>`
           : "<p>No per-model data.</p>"

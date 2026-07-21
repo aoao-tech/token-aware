@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { AgentSpend, UsageEvent } from "./types";
+import { freshTokens } from "./util";
 
 /**
  * Group usage events by conversation (agent) and mark the current one.
@@ -16,10 +17,11 @@ export function groupAgents(events: UsageEvent[], currentId: string | undefined)
     }
     let a = map.get(id);
     if (!a) {
-      a = { conversationId: id, tokens: 0, costCents: 0, lastTs: 0, count: 0, isCurrent: false };
+      a = { conversationId: id, tokens: 0, cacheTokens: 0, costCents: 0, lastTs: 0, count: 0, isCurrent: false };
       map.set(id, a);
     }
-    a.tokens += e.totalTokens;
+    a.tokens += freshTokens(e);
+    a.cacheTokens += e.cacheReadTokens;
     a.costCents += e.costCents ?? 0;
     a.lastTs = Math.max(a.lastTs, e.timestamp);
     a.count += 1;

@@ -14,7 +14,10 @@ export interface UsageEvent {
 export interface AgentSpend {
   conversationId: string;
   title?: string;
+  /** Newly processed tokens: input + output + cache writes. */
   tokens: number;
+  /** Context re-served from the prompt cache (cheap, shown separately). */
+  cacheTokens: number;
   costCents: number;
   lastTs: number;
   count: number;
@@ -23,7 +26,9 @@ export interface AgentSpend {
 
 export interface ModelAggregate {
   model: string;
+  /** Newly processed tokens: input + output + cache writes. */
   totalTokens: number;
+  cacheTokens?: number;
   costCents: number;
 }
 

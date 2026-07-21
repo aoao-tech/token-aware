@@ -94,14 +94,10 @@ export class CursorApiClient {
     const aggregations = (data.aggregations as unknown[]) ?? [];
     const models: ModelAggregate[] = aggregations.map((raw) => {
       const a = raw as Record<string, unknown>;
-      const tokens =
-        toNum(a.inputTokens) +
-        toNum(a.outputTokens) +
-        toNum(a.cacheReadTokens) +
-        toNum(a.cacheWriteTokens);
       return {
         model: (a.modelIntent ?? a.model ?? "unknown") as string,
-        totalTokens: tokens,
+        totalTokens: toNum(a.inputTokens) + toNum(a.outputTokens) + toNum(a.cacheWriteTokens),
+        cacheTokens: toNum(a.cacheReadTokens),
         costCents: toNum(a.totalCents),
       };
     });

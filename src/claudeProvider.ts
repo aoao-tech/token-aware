@@ -7,7 +7,8 @@ import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
 import { AgentScope, getConfig, UnitSetting } from "./config";
 import { Provider, ProviderData, ProviderUnit } from "./provider";
-import { UsageEvent } from "./types";
+import { ModelAggregate, UsageEvent } from "./types";
+import { freshTokens } from "./util";
 import { JsonlWatcher } from "./watcher";
 
 /** Per-session facts learned while parsing its transcript. */
@@ -84,9 +85,11 @@ export class ClaudeProvider implements Provider {
 
     // Monthly totals count everything, including subagents and background runs.
     let monthlyTokens = 0;
+    let monthlyCacheTokens = 0;
     let monthlyCostCents = 0;
     for (const e of events) {
-      monthlyTokens += e.totalTokens;
+      monthlyTokens += freshTokens(e);
+      monthlyCacheTokens += e.cacheReadTokens;
       monthlyCostCents += e.costCents ?? 0;
     }
 
@@ -108,6 +111,7 @@ export class ClaudeProvider implements Provider {
         conversationId: currentId,
         title: this.titleFor(currentId),
         tokens: 0,
+        cacheTokens: 0,
         costCents: 0,
         lastTs: 0,
         count: 0,
@@ -121,6 +125,7 @@ export class ClaudeProvider implements Provider {
       agents,
       lastCall: scoped.at(-1) ?? events.at(-1),
       monthlyTokens,
+      monthlyCacheTokens,
       monthlyCostCents,
       models: aggregateModels(events),
     };
@@ -349,16 +354,17 @@ function isWithin(root: string, child: string): boolean {
   return c === root || c.startsWith(root + path.sep);
 }
 
-function aggregateModels(events: UsageEvent[]): { model: string; totalTokens: number; costCents: number }[] {
-  const map = new Map<string, { model: string; totalTokens: number; costCents: number }>();
+function aggregateModels(events: UsageEvent[]): ModelAggregate[] {
+  const map = new Map<string, ModelAggregate>();
   for (const e of events) {
     const key = e.model ?? "unknown";
     let m = map.get(key);
     if (!m) {
-      m = { model: key, totalTokens: 0, costCents: 0 };
+      m = { model: key, totalTokens: 0, cacheTokens: 0, costCents: 0 };
       map.set(key, m);
     }
-    m.totalTokens += e.totalTokens;
+    m.totalTokens += freshTokens(e);
+    m.cacheTokens = (m.cacheTokens ?? 0) + e.cacheReadTokens;
     m.costCents += e.costCents ?? 0;
   }
   return [...map.values()].sort((a, b) => b.totalTokens - a.totalTokens);

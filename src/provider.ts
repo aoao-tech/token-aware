@@ -19,7 +19,10 @@ export interface ProviderData {
   agents: AgentSpend[];
   /** Most recent single call. */
   lastCall?: UsageEvent;
+  /** Newly processed tokens this month (input + output + cache writes). */
   monthlyTokens: number;
+  /** Cache-read tokens this month, tracked separately. */
+  monthlyCacheTokens?: number;
   monthlyCostCents?: number;
   models?: ModelAggregate[];
   quotaPct?: number;
