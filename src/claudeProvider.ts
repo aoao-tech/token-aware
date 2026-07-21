@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { extractText, groupAgents, truncate } from "./agents";
+import { aggregateModels, extractText, groupAgents, truncate } from "./agents";
 import { ClaudeLimitsResult, fetchClaudeLimits } from "./claudeLimits";
 import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
@@ -126,6 +126,9 @@ export class ClaudeProvider implements Provider {
     }
 
     const { limits, error: limitsError } = await this.getLimits();
+    const currentSessionModels: ModelAggregate[] | undefined = currentId
+      ? aggregateModels(scoped.filter((e) => e.conversationId === currentId))
+      : undefined;
 
     return {
       ...base,
@@ -136,6 +139,7 @@ export class ClaudeProvider implements Provider {
       monthlyCacheTokens,
       monthlyCostCents,
       models: aggregateModels(events),
+      currentSessionModels,
       limits,
       limitsError,
       quotaPct: limits?.length ? Math.max(...limits.map((l) => l.pct)) : undefined,
@@ -376,20 +380,4 @@ function normalizePath(p: string): string {
 function isWithin(root: string, child: string): boolean {
   const c = normalizePath(child);
   return c === root || c.startsWith(root + path.sep);
-}
-
-function aggregateModels(events: UsageEvent[]): ModelAggregate[] {
-  const map = new Map<string, ModelAggregate>();
-  for (const e of events) {
-    const key = e.model ?? "unknown";
-    let m = map.get(key);
-    if (!m) {
-      m = { model: key, totalTokens: 0, cacheTokens: 0, costCents: 0 };
-      map.set(key, m);
-    }
-    m.totalTokens += freshTokens(e);
-    m.cacheTokens = (m.cacheTokens ?? 0) + e.cacheReadTokens;
-    m.costCents += e.costCents ?? 0;
-  }
-  return [...map.values()].sort((a, b) => b.totalTokens - a.totalTokens);
 }

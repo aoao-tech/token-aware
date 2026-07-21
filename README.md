@@ -24,7 +24,8 @@ don't appear.
   "current" the moment you send a message in it.
 - Updates on a poll interval **and** instantly right after each AI turn.
 - Click it for a details panel: current session, spend-by-session table, monthly
-  totals, and top models, per tool.
+  totals, top models, and a per-model breakdown of just the current session (so a
+  large session total is explainable, not just a number), per tool.
 - Claude session list is scoped to your open workspace by default (background runs,
   subagents, and other projects are excluded from the list; monthly totals still
   count everything).

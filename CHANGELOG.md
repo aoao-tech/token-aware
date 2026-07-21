@@ -2,6 +2,15 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.12]
+
+- Added: a "Current session breakdown" table in the details panel, showing
+  which models make up the current session's token total (and cached tokens,
+  and cost in dollars mode). Previously the per-model table only covered the
+  whole month, with no way to see what a single session's number was made of.
+- Fixed: `resets in` durations over 24 hours now show as `4d 1h` instead of
+  `97h 39m`.
+
 ## [0.2.11]
 
 - Fixed: status bar items now sit to the right of VS Code's built-in Problems

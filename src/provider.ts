@@ -43,6 +43,8 @@ export interface ProviderData {
    */
   monthlyMatchesBillingCycle?: boolean;
   models?: ModelAggregate[];
+  /** Per-model breakdown for just the current session, not the whole month. */
+  currentSessionModels?: ModelAggregate[];
   /** Plan-limit gauges (session/weekly buckets), when the plan has limits. */
   limits?: PlanLimit[];
   /** Why plan-limit gauges are missing, when it's an unexpected failure rather than N/A. */

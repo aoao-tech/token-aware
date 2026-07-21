@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { AgentSpend, UsageEvent } from "./types";
+import { AgentSpend, ModelAggregate, UsageEvent } from "./types";
 import { freshTokens } from "./util";
 
 /**
@@ -31,6 +31,23 @@ export function groupAgents(events: UsageEvent[], currentId: string | undefined)
     a.isCurrent = a.conversationId === currentId;
   }
   return list;
+}
+
+/** Aggregate usage events by model. Pass a pre-filtered slice to scope it to one session. */
+export function aggregateModels(events: UsageEvent[]): ModelAggregate[] {
+  const map = new Map<string, ModelAggregate>();
+  for (const e of events) {
+    const key = e.model ?? "unknown";
+    let m = map.get(key);
+    if (!m) {
+      m = { model: key, totalTokens: 0, cacheTokens: 0, costCents: 0 };
+      map.set(key, m);
+    }
+    m.totalTokens += freshTokens(e);
+    m.cacheTokens = (m.cacheTokens ?? 0) + e.cacheReadTokens;
+    m.costCents += e.costCents ?? 0;
+  }
+  return [...map.values()].sort((a, b) => b.totalTokens - a.totalTokens);
 }
 
 /**

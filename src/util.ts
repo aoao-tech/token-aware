@@ -34,5 +34,9 @@ export function formatDuration(ms: number): string {
     return `${mins}m`;
   }
   const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m`;
+  if (hrs < 24) {
+    return `${hrs}h ${mins % 60}m`;
+  }
+  const days = Math.floor(hrs / 24);
+  return `${days}d ${hrs % 24}h`;
 }

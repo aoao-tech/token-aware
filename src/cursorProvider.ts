@@ -1,6 +1,6 @@
 import * as os from "node:os";
 import * as path from "node:path";
-import { groupAgents, TitleResolver } from "./agents";
+import { aggregateModels, groupAgents, TitleResolver } from "./agents";
 import { getCredentials, getStateDbPath } from "./auth";
 import { getConfig, UnitSetting } from "./config";
 import { CursorApiClient } from "./cursorApi";
@@ -86,6 +86,9 @@ export class CursorProvider implements Provider {
       monthlyCacheTokens: snapshot.cacheReadTokens,
       monthlyCostCents: snapshot.monthlyCostCents,
       models: snapshot.models,
+      currentSessionModels: currentId
+        ? aggregateModels(snapshot.events.filter((e) => e.conversationId === currentId))
+        : undefined,
       quotaPct: snapshot.quotaPct,
     };
   }

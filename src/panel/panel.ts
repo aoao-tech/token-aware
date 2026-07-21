@@ -95,6 +95,21 @@ export class DetailsPanel implements vscode.Disposable {
       </div>
 
       ${
+        d.currentSessionModels?.length
+          ? `<h2>Current session breakdown</h2><table><tr><th>Model</th><th>Tokens</th><th>Cached</th>${
+              showCost ? "<th>Cost</th>" : ""
+            }</tr>${d.currentSessionModels
+              .map(
+                (m) =>
+                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td><td>${formatTokens(
+                    m.cacheTokens ?? 0
+                  )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
+              )
+              .join("")}</table>`
+          : ""
+      }
+
+      ${
         d.limits?.length
           ? `<h2>Plan limits</h2><table>${d.limits
               .map((l) => {
