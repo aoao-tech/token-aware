@@ -88,12 +88,11 @@ export class DetailsPanel implements vscode.Disposable {
             d.lastCall
               ? (() => {
                   const fresh = freshTokens(d.lastCall);
-                  const breakdown =
-                    d.lastCall.cacheWriteTokens > fresh * 0.2
-                      ? ` (${formatTokens(d.lastCall.outputTokens)} out + ${formatTokens(
-                          d.lastCall.cacheWriteTokens
-                        )} cache-write)`
-                      : "";
+                  const breakdown = d.lastCall.cacheWriteTokens
+                    ? ` (${formatTokens(d.lastCall.outputTokens)} out + ${formatTokens(
+                        d.lastCall.cacheWriteTokens
+                      )} cache-write)`
+                    : "";
                   return `${formatTokens(fresh)} tok${breakdown}${
                     d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} cached` : ""
                   }`;

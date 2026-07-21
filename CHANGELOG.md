@@ -2,6 +2,14 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.15]
+
+- Changed: "Last turn" now always splits generated output from cache-write
+  (e.g. "3.5k generated + 2.9k cache-write"), not just when cache-write
+  dominates the total. Cache-write is a distinct cost driver from the reply
+  itself even at modest proportions, and this session's usage showed the
+  split is informative either way, small turns and huge ones alike.
+
 ## [0.2.14]
 
 - Added: "Last turn" now breaks out cache-write tokens from generated output
