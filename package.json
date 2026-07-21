@@ -1,0 +1,131 @@
+{
+  "name": "token-aware",
+  "displayName": "Token Aware",
+  "description": "Live AI token/dollar usage in the status bar. Auto-detects Cursor and Claude Code, your plan type, and shows per-session, last-call, and monthly spend.",
+  "version": "0.2.0",
+  "publisher": "aoao-tech",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aoao-tech/token-aware.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "tokens",
+    "usage",
+    "spend",
+    "ai",
+    "cursor",
+    "claude"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tokenAware.refresh",
+        "title": "Token Aware: Refresh Now"
+      },
+      {
+        "command": "tokenAware.showDetails",
+        "title": "Token Aware: Show Details"
+      }
+    ],
+    "configuration": {
+      "title": "Token Aware",
+      "properties": {
+        "tokenAware.pollIntervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "description": "How often (in seconds) to refresh usage data."
+        },
+        "tokenAware.displayMode": {
+          "type": "string",
+          "enum": [
+            "session",
+            "monthly",
+            "both"
+          ],
+          "default": "both",
+          "description": "What to show in the status bar: current-session spend ('session'), monthly spend ('monthly'), or both."
+        },
+        "tokenAware.instantRefreshOnTurn": {
+          "type": "boolean",
+          "default": true,
+          "description": "Watch transcripts and refresh immediately after each AI turn completes."
+        },
+        "tokenAware.cursor.enabled": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "default": "auto",
+          "description": "Track Cursor usage. 'auto' shows it only when Cursor is detected on this machine."
+        },
+        "tokenAware.cursor.unit": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "dollars",
+            "tokens"
+          ],
+          "default": "auto",
+          "description": "Show Cursor spend as dollars (usage-based/business plans) or tokens (monthly plans). 'auto' detects from the account's plan type."
+        },
+        "tokenAware.claude.enabled": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "default": "auto",
+          "description": "Track Claude Code usage. 'auto' shows it only when Claude Code data is found (~/.claude/projects)."
+        },
+        "tokenAware.claude.unit": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "dollars",
+            "tokens"
+          ],
+          "default": "auto",
+          "description": "Show Claude spend as tokens (subscription plans) or estimated dollars (API billing; uses a bundled pricing table). 'auto' detects from the local Claude Code login."
+        },
+        "tokenAware.claude.sessionScope": {
+          "type": "string",
+          "enum": [
+            "workspace",
+            "all"
+          ],
+          "default": "workspace",
+          "description": "Which Claude Code sessions to list individually: only those started from the open workspace folder(s), or all sessions on this machine. Monthly totals always include everything."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc --noEmit",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  }
+}

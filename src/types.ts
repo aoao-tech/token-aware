@@ -1,0 +1,52 @@
+export interface UsageEvent {
+  timestamp: number;
+  model?: string;
+  kind?: string;
+  conversationId?: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  totalTokens: number;
+  costCents?: number;
+}
+
+export interface AgentSpend {
+  conversationId: string;
+  title?: string;
+  tokens: number;
+  costCents: number;
+  lastTs: number;
+  count: number;
+  isCurrent: boolean;
+}
+
+export interface ModelAggregate {
+  model: string;
+  totalTokens: number;
+  costCents: number;
+}
+
+export interface UsageSnapshot {
+  fetchedAt: number;
+  /** Monthly totals (from the aggregated endpoint). */
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  /** Total spend this period, in cents (usage-based + included token fees). */
+  monthlyCostCents?: number;
+  /** Per-model monthly breakdown. */
+  models: ModelAggregate[];
+  /** Included premium requests used vs limit, if reported. */
+  includedRequests?: number;
+  includedRequestsLimit?: number;
+  /** 0..100 percentage of included allotment consumed (may be undefined). */
+  quotaPct?: number;
+  /** Account plan reported by the dashboard, e.g. "pro", "enterprise". */
+  membershipType?: string;
+  /** Recent per-request events (newest last), used for per-agent + per-turn calc. */
+  events: UsageEvent[];
+  raw?: unknown;
+}
