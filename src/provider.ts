@@ -34,6 +34,14 @@ export interface ProviderData {
   /** Cache-read tokens this month, tracked separately. */
   monthlyCacheTokens?: number;
   monthlyCostCents?: number;
+  /**
+   * Whether the monthly total lines up with this provider's actual billing
+   * cycle. False when the plan resets on a rolling window (e.g. Claude's 5h
+   * session / 7-day windows) rather than the calendar month, which makes a
+   * "this month" figure a confusing, mismatched number for the compact
+   * status bar (it stays available in the tooltip and details panel).
+   */
+  monthlyMatchesBillingCycle?: boolean;
   models?: ModelAggregate[];
   /** Plan-limit gauges (session/weekly buckets), when the plan has limits. */
   limits?: PlanLimit[];

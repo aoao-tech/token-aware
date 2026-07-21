@@ -70,6 +70,10 @@ export class ClaudeProvider implements Provider {
       icon: this.icon,
       unit,
       planLabel: this.plan?.label,
+      // Claude's plan limits reset on rolling 5h/7-day windows, not the
+      // calendar month, so a calendar-month total belongs in the details
+      // view, not the compact status bar.
+      monthlyMatchesBillingCycle: false,
       status: "ok",
       agents: [],
       monthlyTokens: 0,

@@ -68,7 +68,7 @@ export class StatusBar implements vscode.Disposable {
     if (last) {
       parts.push(last);
     }
-    if (mode !== "session") {
+    if (mode !== "session" && data.monthlyMatchesBillingCycle !== false) {
       parts.push(monthly);
     }
     for (const l of this.headlineLimits(data)) {
