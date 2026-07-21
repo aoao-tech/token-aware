@@ -2,6 +2,13 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.11]
+
+- Fixed: status bar items now sit to the right of VS Code's built-in Problems
+  (errors/warnings) indicator. 0.2.10's priority guess had it backwards,
+  Problems uses a lower priority than assumed and ended up to our right
+  instead of our left.
+
 ## [0.2.10]
 
 - Changed: status bar items moved from the far right to the left side, right
