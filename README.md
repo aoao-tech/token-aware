@@ -12,9 +12,12 @@ don't appear.
 
 - One status bar item per detected tool, e.g. `⚡ $1.93 session · $0.42 last · $1301.81 mo`
   (Cursor) and `✨ 45.2k session · 122k last · 2.3M mo` (Claude).
-- **Auto plan detection**: figures out whether you're on a subscription (Claude
-  Pro/Max, Cursor individual plans → shows tokens) or per-usage billing (API keys,
-  Cursor enterprise/business → shows dollars). Manual override available.
+- **Auto plan detection**: figures out whether you're on a flat monthly plan (Claude
+  Free/Pro/Max, Cursor individual plans → shows tokens) or per-usage billing (API keys,
+  Claude Team/Enterprise seats, Cursor enterprise/business → shows dollars). Signing in
+  to Claude with corporate SSO under an org's per-usage contract is detected the same
+  way as an API key; you never need to hold an API key yourself. Manual override
+  available if it guesses wrong.
 - **Per-session spend**: tracks the session you're currently working in. It becomes
   "current" the moment you send a message in it.
 - Updates on a poll interval **and** instantly right after each AI turn.
@@ -53,7 +56,9 @@ every assistant message includes an exact `usage` block. So this provider is **f
 local, accurate, and needs no auth**: it reads those files, dedupes streamed chunks by
 `requestId`, groups by session, resolves session titles, and (optionally) converts tokens
 to dollars with a bundled Anthropic pricing table. Plan detection reads the local Claude
-Code login metadata (subscription vs. API billing); nothing leaves your machine.
+Code login metadata (`billingType` and plan tier); a claude.ai login by itself isn't
+treated as proof of flat-fee billing, since Team/Enterprise seats sign in the same way
+but are commonly billed per-usage. Nothing leaves your machine for this check.
 
 > Note: neither editor exposes the focused chat tab to extensions, so "current session"
 > means the conversation you most recently interacted with (it updates as soon as you
