@@ -140,7 +140,7 @@ export class StatusBar implements vscode.Disposable {
     const last = data.lastCall;
     if (last) {
       md.appendMarkdown(
-        `Last call: **${this.amount(data.unit, last.costCents, freshTokens(last))}** \u00b7 ${formatTokens(freshTokens(last))} tok${
+        `Last turn: **${this.amount(data.unit, last.costCents, freshTokens(last))}** \u00b7 ${formatTokens(freshTokens(last))} tok${
           last.cacheReadTokens ? ` (+${formatTokens(last.cacheReadTokens)} cached)` : ""
         }`
       );

@@ -134,7 +134,7 @@ export class ClaudeProvider implements Provider {
       ...base,
       currentAgent,
       agents,
-      lastCall: scoped.at(-1) ?? events.at(-1),
+      lastCall: lastTurnEvent(scoped.length ? scoped : events),
       monthlyTokens,
       monthlyCacheTokens,
       monthlyCostCents,
@@ -245,6 +245,9 @@ export class ClaudeProvider implements Provider {
     let summaryTitle: string | undefined;
     let lastUserText: string | undefined;
     let sidechain = false;
+    // Counts real user messages, so several tool-call round trips within one
+    // reply to the user share a turn number ("cost of my last message").
+    let turn = 0;
 
     let content = "";
     try {
@@ -274,6 +277,8 @@ export class ClaudeProvider implements Provider {
         if (obj && obj.type === "user" && obj.isMeta !== true) {
           if (obj.isSidechain === true) {
             sidechain = true;
+          } else {
+            turn++;
           }
           if (!cwd && typeof obj.cwd === "string") {
             cwd = obj.cwd;
@@ -319,6 +324,7 @@ export class ClaudeProvider implements Provider {
         timestamp: Date.parse((obj.timestamp as string) ?? "") || 0,
         model,
         conversationId: sessionId,
+        turn,
         inputTokens: input,
         outputTokens: output,
         cacheReadTokens: cacheRead,
@@ -352,6 +358,47 @@ export class ClaudeProvider implements Provider {
   dispose(): void {
     this.stopWatch();
   }
+}
+
+/**
+ * "Last call" as the cost of your last message, not one internal API request.
+ * A single reply is often several tool-call round trips; this sums every
+ * event sharing the most recent event's (conversation, turn) pair, since
+ * that's what a per-usage-billed user actually wants to know they spent.
+ */
+function lastTurnEvent(events: UsageEvent[]): UsageEvent | undefined {
+  const last = events.at(-1);
+  if (!last || last.turn == null || !last.conversationId) {
+    return last;
+  }
+  const turnEvents = events.filter((e) => e.conversationId === last.conversationId && e.turn === last.turn);
+  if (turnEvents.length <= 1) {
+    return last;
+  }
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cacheReadTokens = 0;
+  let cacheWriteTokens = 0;
+  let costCents = 0;
+  for (const e of turnEvents) {
+    inputTokens += e.inputTokens;
+    outputTokens += e.outputTokens;
+    cacheReadTokens += e.cacheReadTokens;
+    cacheWriteTokens += e.cacheWriteTokens;
+    costCents += e.costCents ?? 0;
+  }
+  return {
+    timestamp: last.timestamp,
+    model: last.model,
+    conversationId: last.conversationId,
+    turn: last.turn,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheWriteTokens,
+    totalTokens: inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens,
+    costCents,
+  };
 }
 
 function tryParse(line: string): Record<string, unknown> | undefined {

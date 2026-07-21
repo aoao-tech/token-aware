@@ -22,6 +22,10 @@ don't appear.
   available if it guesses wrong.
 - **Per-session spend**: tracks the session you're currently working in. It becomes
   "current" the moment you send a message in it.
+- **Last turn, not last call**: a single reply is often several tool-call round trips
+  to the model, each its own differently-sized request. "Last" sums everything since
+  your last real message, so the number reflects what that message actually cost
+  instead of jumping between unrelated sub-call sizes.
 - Updates on a poll interval **and** instantly right after each AI turn.
 - Click it for a details panel: current session, spend-by-session table, monthly
   totals, top models, and a per-model breakdown of just the current session (so a

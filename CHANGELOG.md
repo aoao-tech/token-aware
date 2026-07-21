@@ -2,6 +2,16 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.13]
+
+- Changed: "Last turn" (formerly "Last call") for Claude now sums every API
+  call since your last real message, instead of showing just the single
+  most recent one. A reply is often many tool-call round trips, each a
+  separate, differently-sized request; showing only the trailing one made
+  the number look like it was jumping around erratically as each sub-call
+  finished. This matters most for per-usage/API billing, where this figure
+  is meant to answer "what did my last message actually cost me."
+
 ## [0.2.12]
 
 - Added: a "Current session breakdown" table in the details panel, showing

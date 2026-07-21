@@ -9,6 +9,12 @@ export interface UsageEvent {
   cacheWriteTokens: number;
   totalTokens: number;
   costCents?: number;
+  /**
+   * Which user turn this call belongs to (increments per real user message
+   * in a session). One turn is often several API calls (tool use round
+   * trips), so this groups them for a "cost of my last message" total.
+   */
+  turn?: number;
 }
 
 export interface AgentSpend {

@@ -82,7 +82,7 @@ export class DetailsPanel implements vscode.Disposable {
           }</div>
         </div>
         <div class="card">
-          <div class="label">Last call</div>
+          <div class="label">Last turn</div>
           <div class="value">${d.lastCall ? amount(d.lastCall.costCents, freshTokens(d.lastCall)) : "-"}</div>
           <div class="sub">${
             d.lastCall
