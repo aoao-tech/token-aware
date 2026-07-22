@@ -133,22 +133,24 @@ export class StatusBar implements vscode.Disposable {
       md.appendMarkdown(`Current session: **${this.label(cur)}**\n\n`);
       md.appendMarkdown(
         `\u2937 **${this.amount(data.unit, cur.costCents, cur.tokens)}** \u00b7 ${formatTokens(cur.tokens)} tok${
-          cur.cacheTokens ? ` (+${formatTokens(cur.cacheTokens)} cached)` : ""
+          cur.cacheTokens ? ` (+${formatTokens(cur.cacheTokens)} reused)` : ""
         } \u00b7 ${cur.count} calls\n\n`
       );
     }
     const last = data.lastCall;
     if (last) {
       const fresh = freshTokens(last);
-      // Always split generated output from cache-write: even a modest
-      // cache-write is worth seeing, since it's a different cost driver
-      // (re-caching growing context) than the reply itself.
+      // Split the turn into plain words a non-technical user gets: "reply"
+      // is what their message produced, "setup" is the one-time work of
+      // loading the session's context before it can answer. On a brand-new
+      // session a one-word "hi" is a tiny reply plus a big setup, so without
+      // this split the honest total looks like a bug.
       const breakdown = last.cacheWriteTokens
-        ? ` (${formatTokens(last.outputTokens)} generated + ${formatTokens(last.cacheWriteTokens)} cache-write)`
+        ? ` (${formatTokens(last.outputTokens)} reply + ${formatTokens(last.cacheWriteTokens)} setup)`
         : "";
       md.appendMarkdown(
         `Last turn: **${this.amount(data.unit, last.costCents, fresh)}** \u00b7 ${formatTokens(fresh)} tok${breakdown}${
-          last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} cached` : ""
+          last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} reused` : ""
         }`
       );
       if (last.model) {
@@ -165,7 +167,7 @@ export class StatusBar implements vscode.Disposable {
     }
     md.appendMarkdown(
       `This month: **${this.amount(data.unit, data.monthlyCostCents, data.monthlyTokens)}** \u00b7 ${formatTokens(data.monthlyTokens)} tok${
-        data.monthlyCacheTokens ? ` (+${formatTokens(data.monthlyCacheTokens)} cached)` : ""
+        data.monthlyCacheTokens ? ` (+${formatTokens(data.monthlyCacheTokens)} reused)` : ""
       }\n\n`
     );
     if (data.limits?.length) {

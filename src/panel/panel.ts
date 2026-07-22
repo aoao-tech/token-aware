@@ -78,7 +78,7 @@ export class DetailsPanel implements vscode.Disposable {
           <div class="label">This month</div>
           <div class="value">${amount(d.monthlyCostCents, d.monthlyTokens)}</div>
           <div class="sub">${formatTokens(d.monthlyTokens)} tokens${
-            d.monthlyCacheTokens ? ` · ${formatTokens(d.monthlyCacheTokens)} cached` : ""
+            d.monthlyCacheTokens ? ` · ${formatTokens(d.monthlyCacheTokens)} reused` : ""
           }</div>
         </div>
         <div class="card">
@@ -89,12 +89,12 @@ export class DetailsPanel implements vscode.Disposable {
               ? (() => {
                   const fresh = freshTokens(d.lastCall);
                   const breakdown = d.lastCall.cacheWriteTokens
-                    ? ` (${formatTokens(d.lastCall.outputTokens)} out + ${formatTokens(
+                    ? ` (${formatTokens(d.lastCall.outputTokens)} reply + ${formatTokens(
                         d.lastCall.cacheWriteTokens
-                      )} cache-write)`
+                      )} setup)`
                     : "";
                   return `${formatTokens(fresh)} tok${breakdown}${
-                    d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} cached` : ""
+                    d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} reused` : ""
                   }`;
                 })()
               : ""
@@ -104,7 +104,7 @@ export class DetailsPanel implements vscode.Disposable {
 
       ${
         d.currentSessionModels?.length
-          ? `<h2>Current session breakdown</h2><table><tr><th>Model</th><th>Tokens</th><th>Cached</th>${
+          ? `<h2>Current session breakdown</h2><table><tr><th>Model</th><th>Tokens</th><th>Reused</th>${
               showCost ? "<th>Cost</th>" : ""
             }</tr>${d.currentSessionModels
               .map(
@@ -136,7 +136,7 @@ export class DetailsPanel implements vscode.Disposable {
       <h2>Spend by session</h2>
       ${
         d.agents.length
-          ? `<table><tr><th></th><th>Session</th>${showCost ? "<th>Cost</th>" : ""}<th>Tokens</th><th>Cached</th><th>Calls</th><th>Last active</th></tr>${d.agents
+          ? `<table><tr><th></th><th>Session</th>${showCost ? "<th>Cost</th>" : ""}<th>Tokens</th><th>Reused</th><th>Calls</th><th>Last active</th></tr>${d.agents
               .map(
                 (a) =>
                   `<tr><td>${a.isCurrent ? "\u25b6" : ""}</td><td>${escapeHtml(
@@ -152,7 +152,7 @@ export class DetailsPanel implements vscode.Disposable {
       <h2>Top models (month)</h2>
       ${
         models.length
-          ? `<table><tr><th>Model</th><th>Tokens</th><th>Cached</th>${showCost ? "<th>Cost</th>" : ""}</tr>${models
+          ? `<table><tr><th>Model</th><th>Tokens</th><th>Reused</th>${showCost ? "<th>Cost</th>" : ""}</tr>${models
               .map(
                 (m) =>
                   `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td><td>${formatTokens(

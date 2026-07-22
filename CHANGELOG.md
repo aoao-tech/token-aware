@@ -2,6 +2,17 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.16]
+
+- Changed: dropped the word "cache" from all user-facing text in favor of plain
+  language. "Last turn" now splits into "reply" (what your message produced) and
+  "setup" (the one-time work of loading the session before it can answer), e.g.
+  "36k tok (12 reply + 36k setup)". Reused-context is now labeled "reused" instead
+  of "cached." A brand-new session answering a one-word "hi" is a tiny reply plus a
+  large setup; with the old "cache-write" wording the honest total read like a bug
+  to anyone who didn't know the caching mechanics. Dollar and token totals are
+  unchanged, so per-usage billing still shows the true cost.
+
 ## [0.2.15]
 
 - Changed: "Last turn" now always splits generated output from cache-write
