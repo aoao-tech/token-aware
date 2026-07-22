@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { shortId } from "../agents";
 import { ProviderData } from "../provider";
 import { ProviderMap } from "../tracker";
-import { AgentSpend } from "../types";
-import { formatCents, formatDuration, formatTokens, freshTokens } from "../util";
+import { AgentSpend, UsageEvent } from "../types";
+import { formatCents, formatDuration, formatTokens, replyTokens } from "../util";
 
 export class DetailsPanel implements vscode.Disposable {
   private static current: DetailsPanel | undefined;
@@ -82,20 +82,34 @@ export class DetailsPanel implements vscode.Disposable {
           }</div>
         </div>
         <div class="card">
-          <div class="label">Last turn</div>
-          <div class="value">${d.lastCall ? amount(d.lastCall.costCents, freshTokens(d.lastCall)) : "-"}</div>
+          <div class="label">Last turn${showCost ? "" : " (reply)"}</div>
+          <div class="value">${
+            d.lastCall
+              ? showCost
+                ? formatCents(d.lastCall.costCents ?? 0)
+                : amount(replyCostCents(d.lastCall), replyTokens(d.lastCall))
+              : "-"
+          }</div>
           <div class="sub">${
             d.lastCall
               ? (() => {
-                  const fresh = freshTokens(d.lastCall);
-                  const breakdown = d.lastCall.cacheWriteTokens
-                    ? ` (${formatTokens(d.lastCall.outputTokens)} reply + ${formatTokens(
-                        d.lastCall.cacheWriteTokens
-                      )} setup)`
-                    : "";
-                  return `${formatTokens(fresh)} tok${breakdown}${
-                    d.lastCall.cacheReadTokens ? ` · ${formatTokens(d.lastCall.cacheReadTokens)} reused` : ""
-                  }`;
+                  const lc = d.lastCall;
+                  const parts: string[] = [];
+                  if (showCost) {
+                    parts.push(`${amount(replyCostCents(lc), replyTokens(lc))} reply`);
+                  }
+                  if (lc.cacheWriteTokens) {
+                    parts.push(
+                      `${showCost ? "" : "+ "}${amount(
+                        lc.setupCostCents,
+                        lc.cacheWriteTokens
+                      )} setup (loading context)`
+                    );
+                  }
+                  if (lc.cacheReadTokens) {
+                    parts.push(`${formatTokens(lc.cacheReadTokens)} reused`);
+                  }
+                  return parts.join(" · ");
                 })()
               : ""
           }</div>
@@ -212,6 +226,11 @@ function fmtTime(ms: number): string {
     return "";
   }
   return new Date(ms).toLocaleString();
+}
+
+/** Cost of answering, with the context-loading ("setup") share taken out. */
+function replyCostCents(e: UsageEvent): number {
+  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0));
 }
 
 function escapeHtml(s: string): string {

@@ -10,6 +10,12 @@ export interface UsageEvent {
   totalTokens: number;
   costCents?: number;
   /**
+   * The part of costCents spent loading context rather than answering
+   * ("setup"). Shown apart from the reply so a one-word message on a fresh
+   * session doesn't look like it cost a fortune by itself.
+   */
+  setupCostCents?: number;
+  /**
    * Which user turn this call belongs to (increments per real user message
    * in a session). One turn is often several API calls (tool use round
    * trips), so this groups them for a "cost of my last message" total.

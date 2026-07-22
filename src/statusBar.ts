@@ -3,8 +3,8 @@ import { shortId } from "./agents";
 import { DisplayMode, TrackerConfig } from "./config";
 import { PlanLimit, ProviderData, ProviderUnit } from "./provider";
 import { ProviderMap } from "./tracker";
-import { AgentSpend } from "./types";
-import { formatCents, formatDuration, formatTokens, freshTokens } from "./util";
+import { AgentSpend, UsageEvent } from "./types";
+import { formatCents, formatDuration, formatTokens, replyTokens } from "./util";
 
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
@@ -58,8 +58,18 @@ export class StatusBar implements vscode.Disposable {
       data.unit === "dollars" ? formatCents(costCents ?? 0) : formatTokens(tokens);
 
     const agent = `${fmtAmount(data.currentAgent?.costCents, data.currentAgent?.tokens ?? 0)} session`;
-    const last = data.lastCall
-      ? `${fmtAmount(data.lastCall.costCents, freshTokens(data.lastCall))} last`
+    // On per-usage billing the headline is the true total charged, since
+    // that's the number being paid; the tooltip and panel say where it went.
+    // In tokens mode the headline is the reply instead, because folding in
+    // context-loading made a one-word message read as if it used 60k by
+    // itself, which looks made up. Setup is shown beside it either way.
+    const lc = data.lastCall;
+    const last = lc
+      ? data.unit === "dollars"
+        ? `${fmtAmount(lc.costCents, replyTokens(lc))} last`
+        : `${fmtAmount(replyCostCents(lc), replyTokens(lc))} last${
+            lc.cacheWriteTokens ? ` +${formatTokens(lc.cacheWriteTokens)} setup` : ""
+          }`
       : undefined;
     const monthly = `${fmtAmount(data.monthlyCostCents, data.monthlyTokens)} mo`;
 
@@ -139,20 +149,21 @@ export class StatusBar implements vscode.Disposable {
     }
     const last = data.lastCall;
     if (last) {
-      const fresh = freshTokens(last);
-      // Split the turn into plain words a non-technical user gets: "reply"
-      // is what their message produced, "setup" is the one-time work of
-      // loading the session's context before it can answer. On a brand-new
-      // session a one-word "hi" is a tiny reply plus a big setup, so without
-      // this split the honest total looks like a bug.
-      const breakdown = last.cacheWriteTokens
-        ? ` (${formatTokens(last.outputTokens)} reply + ${formatTokens(last.cacheWriteTokens)} setup)`
+      // "reply" is answering the message, "setup" is loading context before
+      // it could answer. Always itemized, so a per-usage user can see the
+      // true total and exactly what made it up.
+      const reply = this.amount(data.unit, replyCostCents(last), replyTokens(last));
+      const setup = last.cacheWriteTokens
+        ? ` + ${this.amount(data.unit, last.setupCostCents, last.cacheWriteTokens)} setup`
         : "";
-      md.appendMarkdown(
-        `Last turn: **${this.amount(data.unit, last.costCents, fresh)}** \u00b7 ${formatTokens(fresh)} tok${breakdown}${
-          last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} reused` : ""
-        }`
-      );
+      const reused = last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} reused` : "";
+      if (data.unit === "dollars") {
+        md.appendMarkdown(
+          `Last turn: **${formatCents(last.costCents ?? 0)}**\n\n\u2937 ${reply} reply${setup}${reused}`
+        );
+      } else {
+        md.appendMarkdown(`Last turn: **${reply}** reply${setup}${reused}`);
+      }
       if (last.model) {
         md.appendMarkdown(` \u00b7 ${escapeMd(last.model)}`);
       }
@@ -195,6 +206,11 @@ export class StatusBar implements vscode.Disposable {
     }
     this.items.clear();
   }
+}
+
+/** Cost of answering, with the context-loading ("setup") share taken out. */
+function replyCostCents(e: UsageEvent): number {
+  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0));
 }
 
 /** Escape markdown control characters in externally-derived text. */

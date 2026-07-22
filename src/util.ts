@@ -10,6 +10,17 @@ export function freshTokens(e: UsageEvent): number {
   return e.inputTokens + e.outputTokens + e.cacheWriteTokens;
 }
 
+/**
+ * Tokens spent answering: the message sent in plus the reply generated.
+ * This is the number a person means by "what did my last message use", so
+ * it's the headline. Loading context into the cache is real spend too, but
+ * it's overhead the user didn't ask for, so it's reported beside this as
+ * "setup" rather than folded into it.
+ */
+export function replyTokens(e: UsageEvent): number {
+  return e.inputTokens + e.outputTokens;
+}
+
 export function formatTokens(n: number): string {
   if (n < 1000) {
     return String(n);

@@ -331,6 +331,12 @@ export class ClaudeProvider implements Provider {
         cacheWriteTokens: cacheWrite,
         totalTokens: total,
         costCents: claudeCostCents(model, { input, output, cacheRead, cacheWrite }),
+        setupCostCents: claudeCostCents(model, {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite,
+        }),
       });
     }
 
@@ -380,12 +386,14 @@ function lastTurnEvent(events: UsageEvent[]): UsageEvent | undefined {
   let cacheReadTokens = 0;
   let cacheWriteTokens = 0;
   let costCents = 0;
+  let setupCostCents = 0;
   for (const e of turnEvents) {
     inputTokens += e.inputTokens;
     outputTokens += e.outputTokens;
     cacheReadTokens += e.cacheReadTokens;
     cacheWriteTokens += e.cacheWriteTokens;
     costCents += e.costCents ?? 0;
+    setupCostCents += e.setupCostCents ?? 0;
   }
   return {
     timestamp: last.timestamp,
@@ -398,6 +406,7 @@ function lastTurnEvent(events: UsageEvent[]): UsageEvent | undefined {
     cacheWriteTokens,
     totalTokens: inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens,
     costCents,
+    setupCostCents,
   };
 }
 

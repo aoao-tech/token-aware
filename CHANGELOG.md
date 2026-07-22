@@ -2,6 +2,17 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.17]
+
+- Changed: "Last turn" now separates answering your message ("reply") from
+  loading the session's context before it could answer ("setup"), instead of
+  merging them into one figure. Typing "ok" and being told it used 60k read as
+  invented; almost all of it was context loading, not the reply.
+- On per-usage billing the headline stays the true total charged, itemized
+  underneath as reply plus setup, so the amount matches the bill and still shows
+  where it went. On subscription plans the headline is the reply, with setup
+  reported next to it. Nothing is dropped from either view.
+
 ## [0.2.16]
 
 - Changed: dropped the word "cache" from all user-facing text in favor of plain
