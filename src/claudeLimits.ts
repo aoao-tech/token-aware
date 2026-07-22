@@ -89,9 +89,11 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
   if (!creds) {
     return {};
   }
-  // A stale token would just 401; Claude Code refreshes it on next use.
+  // Credentials exist but have lapsed. Claude Code refreshes on next use, so
+  // this is usually momentary, but say so rather than dropping the gauges
+  // with no explanation.
   if (creds.expiresAt && creds.expiresAt <= Date.now()) {
-    return {};
+    return { error: "Claude Code sign-in expired; refreshes on next use" };
   }
 
   let data: Record<string, unknown>;

@@ -16,6 +16,12 @@ export interface UsageEvent {
    */
   setupCostCents?: number;
   /**
+   * The part of costCents spent re-reading context already cached
+   * ("reused"). Cheap per token but the largest share of a long
+   * conversation's turn, so it can't be folded into the reply.
+   */
+  reusedCostCents?: number;
+  /**
    * Which user turn this call belongs to (increments per real user message
    * in a session). One turn is often several API calls (tool use round
    * trips), so this groups them for a "cost of my last message" total.

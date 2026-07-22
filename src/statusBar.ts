@@ -66,10 +66,13 @@ export class StatusBar implements vscode.Disposable {
     const lc = data.lastCall;
     const last = lc
       ? data.unit === "dollars"
-        ? `${fmtAmount(lc.costCents, replyTokens(lc))} last`
-        : `${fmtAmount(replyCostCents(lc), replyTokens(lc))} last${
-            lc.cacheWriteTokens ? ` +${formatTokens(lc.cacheWriteTokens)} setup` : ""
-          }`
+        ? // Per-usage: one figure, the true total charged for the turn. Two
+          // dollar amounts side by side just make the reader do arithmetic.
+          `${formatCents(lc.costCents ?? 0)} last`
+        : // Subscription: the reply, since that's what "my last message used"
+          // means to a person. Loading context is real but it isn't something
+          // they typed, so it's itemized in the tooltip instead.
+          `${formatTokens(replyTokens(lc))} last`
       : undefined;
     const monthly = `${fmtAmount(data.monthlyCostCents, data.monthlyTokens)} mo`;
 
@@ -92,6 +95,10 @@ export class StatusBar implements vscode.Disposable {
       // Providers without kind-tagged limit buckets (Cursor) still get a
       // single premium-request quota percentage.
       parts.push(`${Math.round(data.quotaPct)}%`);
+    } else if (data.limitsError) {
+      // Say the gauges are missing rather than letting them vanish; a silent
+      // gap reads as the numbers being wrong, not as a failed lookup.
+      parts.push(`$(warning) limits`);
     }
     item.text = `${icon} ${parts.join(" \u00b7 ")}`;
     item.backgroundColor = this.pickBackground(data);
@@ -149,20 +156,26 @@ export class StatusBar implements vscode.Disposable {
     }
     const last = data.lastCall;
     if (last) {
-      // "reply" is answering the message, "setup" is loading context before
-      // it could answer. Always itemized, so a per-usage user can see the
-      // true total and exactly what made it up.
-      const reply = this.amount(data.unit, replyCostCents(last), replyTokens(last));
-      const setup = last.cacheWriteTokens
-        ? ` + ${this.amount(data.unit, last.setupCostCents, last.cacheWriteTokens)} setup`
-        : "";
-      const reused = last.cacheReadTokens ? ` \u00b7 +${formatTokens(last.cacheReadTokens)} reused` : "";
-      if (data.unit === "dollars") {
+      // One headline figure, then where it went. Three buckets, because they
+      // are three different things: answering, loading context in, and
+      // re-reading context already loaded.
+      const headline =
+        data.unit === "dollars"
+          ? formatCents(last.costCents ?? 0)
+          : formatTokens(replyTokens(last));
+      md.appendMarkdown(`Last turn: **${headline}**\n\n`);
+      md.appendMarkdown(
+        `\u2937 ${this.amount(data.unit, replyCostCents(last), replyTokens(last))} answering your message\n\n`
+      );
+      if (last.cacheWriteTokens) {
         md.appendMarkdown(
-          `Last turn: **${formatCents(last.costCents ?? 0)}**\n\n\u2937 ${reply} reply${setup}${reused}`
+          `\u2937 ${this.amount(data.unit, last.setupCostCents, last.cacheWriteTokens)} loading context\n\n`
         );
-      } else {
-        md.appendMarkdown(`Last turn: **${reply}** reply${setup}${reused}`);
+      }
+      if (last.cacheReadTokens) {
+        md.appendMarkdown(
+          `\u2937 ${this.amount(data.unit, last.reusedCostCents, last.cacheReadTokens)} re-reading context\n\n`
+        );
       }
       if (last.model) {
         md.appendMarkdown(` \u00b7 ${escapeMd(last.model)}`);
@@ -208,9 +221,9 @@ export class StatusBar implements vscode.Disposable {
   }
 }
 
-/** Cost of answering, with the context-loading ("setup") share taken out. */
+/** Cost of answering alone: the total minus the context-loading and re-reading shares. */
 function replyCostCents(e: UsageEvent): number {
-  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0));
+  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0) - (e.reusedCostCents ?? 0));
 }
 
 /** Escape markdown control characters in externally-derived text. */

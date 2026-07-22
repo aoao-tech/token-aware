@@ -94,20 +94,12 @@ export class DetailsPanel implements vscode.Disposable {
             d.lastCall
               ? (() => {
                   const lc = d.lastCall;
-                  const parts: string[] = [];
-                  if (showCost) {
-                    parts.push(`${amount(replyCostCents(lc), replyTokens(lc))} reply`);
-                  }
+                  const parts = [`${amount(replyCostCents(lc), replyTokens(lc))} answering`];
                   if (lc.cacheWriteTokens) {
-                    parts.push(
-                      `${showCost ? "" : "+ "}${amount(
-                        lc.setupCostCents,
-                        lc.cacheWriteTokens
-                      )} setup (loading context)`
-                    );
+                    parts.push(`${amount(lc.setupCostCents, lc.cacheWriteTokens)} loading context`);
                   }
                   if (lc.cacheReadTokens) {
-                    parts.push(`${formatTokens(lc.cacheReadTokens)} reused`);
+                    parts.push(`${amount(lc.reusedCostCents, lc.cacheReadTokens)} re-reading context`);
                   }
                   return parts.join(" · ");
                 })()

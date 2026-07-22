@@ -2,6 +2,22 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.18]
+
+- Changed: the status bar shows one figure for the last turn again. 0.2.17 put
+  "2.4k last +1.5k setup" there, which is accurate but asks the reader to hold two
+  numbers and add them. On per-usage billing it's the one true total charged; on
+  subscription plans it's the reply. The itemization moved to the tooltip and
+  details panel, where there's room to name each part.
+- Fixed: the cost of re-reading already-loaded context was being counted as part
+  of the reply. On a long conversation that is the largest share of a turn, so a
+  short answer could show most of the turn's dollars against it. It's now its own
+  line: answering / loading context / re-reading context, three parts that sum to
+  the true total.
+- Fixed: an expired Claude Code sign-in now says so instead of making the plan
+  limit gauges silently disappear, and a failed limits lookup leaves a marker in
+  the status bar rather than an unexplained gap.
+
 ## [0.2.17]
 
 - Changed: "Last turn" now separates answering your message ("reply") from
