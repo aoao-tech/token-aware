@@ -104,10 +104,12 @@ export class ClaudeProvider implements Provider {
     // Monthly totals count everything, including subagents and background runs.
     let monthlyTokens = 0;
     let monthlyCacheTokens = 0;
+    let monthlySetupTokens = 0;
     let monthlyCostCents = 0;
     for (const e of events) {
       monthlyTokens += freshTokens(e);
       monthlyCacheTokens += e.cacheReadTokens;
+      monthlySetupTokens += e.cacheWriteTokens;
       monthlyCostCents += e.costCents ?? 0;
     }
 
@@ -129,8 +131,11 @@ export class ClaudeProvider implements Provider {
         conversationId: currentId,
         title: this.titleFor(currentId),
         tokens: 0,
+        setupTokens: 0,
         cacheTokens: 0,
         costCents: 0,
+        setupCostCents: 0,
+        reusedCostCents: 0,
         lastTs: 0,
         count: 0,
         isCurrent: true,
@@ -149,6 +154,7 @@ export class ClaudeProvider implements Provider {
       lastCall: lastTurnEvent(scoped.length ? scoped : events),
       monthlyTokens,
       monthlyCacheTokens,
+      monthlySetupTokens,
       monthlyCostCents,
       models: aggregateModels(events),
       currentSessionModels,

@@ -71,15 +71,18 @@ export class DetailsPanel implements vscode.Disposable {
       <div class="cards">
         <div class="card">
           <div class="label">Current session</div>
-          <div class="value">${cur ? amount(cur.costCents, cur.tokens) : "-"}</div>
+          <div class="value">${cur ? amount(cur.costCents, answering(cur.tokens, cur.setupTokens)) : "-"}</div>
           <div class="sub">${cur ? `${escapeHtml(this.label(cur))}` : "no active session"}</div>
         </div>
         <div class="card">
           <div class="label">This month</div>
-          <div class="value">${amount(d.monthlyCostCents, d.monthlyTokens)}</div>
-          <div class="sub">${formatTokens(d.monthlyTokens)} tokens${
-            d.monthlyCacheTokens ? ` · ${formatTokens(d.monthlyCacheTokens)} reused` : ""
-          }</div>
+          <div class="value">${amount(
+            d.monthlyCostCents,
+            answering(d.monthlyTokens, d.monthlySetupTokens)
+          )}</div>
+          <div class="sub">${
+            d.monthlySetupTokens ? `${formatTokens(d.monthlySetupTokens)} loading context · ` : ""
+          }${formatTokens(d.monthlyCacheTokens ?? 0)} re-reading</div>
         </div>
         <div class="card">
           <div class="label">Last turn${showCost ? "" : " (reply)"}</div>
@@ -110,12 +113,14 @@ export class DetailsPanel implements vscode.Disposable {
 
       ${
         d.currentSessionModels?.length
-          ? `<h2>Current session breakdown</h2><table><tr><th>Model</th><th>Tokens</th><th>Reused</th>${
+          ? `<h2>Current session breakdown</h2><table><tr><th>Model</th><th>Answering</th><th>Loading context</th><th>Re-reading</th>${
               showCost ? "<th>Cost</th>" : ""
             }</tr>${d.currentSessionModels
               .map(
                 (m) =>
-                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td><td>${formatTokens(
+                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(
+                    answering(m.totalTokens, m.setupTokens)
+                  )}</td><td>${formatTokens(m.setupTokens ?? 0)}</td><td>${formatTokens(
                     m.cacheTokens ?? 0
                   )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
               )
@@ -150,14 +155,18 @@ export class DetailsPanel implements vscode.Disposable {
       <h2>Spend by session</h2>
       ${
         d.agents.length
-          ? `<table><tr><th></th><th>Session</th>${showCost ? "<th>Cost</th>" : ""}<th>Tokens</th><th>Reused</th><th>Calls</th><th>Last active</th></tr>${d.agents
+          ? `<table><tr><th></th><th>Session</th>${
+              showCost ? "<th>Cost</th>" : ""
+            }<th>Answering</th><th>Loading context</th><th>Re-reading</th><th>Calls</th><th>Last active</th></tr>${d.agents
               .map(
                 (a) =>
                   `<tr><td>${a.isCurrent ? "\u25b6" : ""}</td><td>${escapeHtml(
                     this.label(a)
                   )}</td>${showCost ? `<td>${formatCents(a.costCents)}</td>` : ""}<td>${formatTokens(
-                    a.tokens
-                  )}</td><td>${formatTokens(a.cacheTokens)}</td><td>${a.count}</td><td>${fmtTime(a.lastTs)}</td></tr>`
+                    answering(a.tokens, a.setupTokens)
+                  )}</td><td>${formatTokens(a.setupTokens)}</td><td>${formatTokens(
+                    a.cacheTokens
+                  )}</td><td>${a.count}</td><td>${fmtTime(a.lastTs)}</td></tr>`
               )
               .join("")}</table>`
           : "<p>No session activity in the fetched window.</p>"
@@ -166,10 +175,14 @@ export class DetailsPanel implements vscode.Disposable {
       <h2>Top models (month)</h2>
       ${
         models.length
-          ? `<table><tr><th>Model</th><th>Tokens</th><th>Reused</th>${showCost ? "<th>Cost</th>" : ""}</tr>${models
+          ? `<table><tr><th>Model</th><th>Answering</th><th>Loading context</th><th>Re-reading</th>${
+              showCost ? "<th>Cost</th>" : ""
+            }</tr>${models
               .map(
                 (m) =>
-                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(m.totalTokens)}</td><td>${formatTokens(
+                  `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(
+                    answering(m.totalTokens, m.setupTokens)
+                  )}</td><td>${formatTokens(m.setupTokens ?? 0)}</td><td>${formatTokens(
                     m.cacheTokens ?? 0
                   )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
               )
@@ -227,6 +240,11 @@ function fmtTime(ms: number): string {
     return "";
   }
   return new Date(ms).toLocaleString();
+}
+
+/** Tokens spent answering: the total with the context-loading share removed. */
+function answering(total: number | undefined, setup: number | undefined): number {
+  return Math.max(0, (total ?? 0) - (setup ?? 0));
 }
 
 /** Cost of answering, with the context-loading ("setup") share taken out. */

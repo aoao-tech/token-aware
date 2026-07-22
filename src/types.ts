@@ -34,9 +34,13 @@ export interface AgentSpend {
   title?: string;
   /** Newly processed tokens: input + output + cache writes. */
   tokens: number;
+  /** The share of `tokens` spent loading context rather than answering. */
+  setupTokens: number;
   /** Context re-served from the prompt cache (cheap, shown separately). */
   cacheTokens: number;
   costCents: number;
+  setupCostCents: number;
+  reusedCostCents: number;
   lastTs: number;
   count: number;
   isCurrent: boolean;
@@ -46,6 +50,8 @@ export interface ModelAggregate {
   model: string;
   /** Newly processed tokens: input + output + cache writes. */
   totalTokens: number;
+  /** The share of `totalTokens` spent loading context rather than answering. */
+  setupTokens?: number;
   cacheTokens?: number;
   costCents: number;
 }

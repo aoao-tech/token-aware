@@ -17,12 +17,26 @@ export function groupAgents(events: UsageEvent[], currentId: string | undefined)
     }
     let a = map.get(id);
     if (!a) {
-      a = { conversationId: id, tokens: 0, cacheTokens: 0, costCents: 0, lastTs: 0, count: 0, isCurrent: false };
+      a = {
+        conversationId: id,
+        tokens: 0,
+        setupTokens: 0,
+        cacheTokens: 0,
+        costCents: 0,
+        setupCostCents: 0,
+        reusedCostCents: 0,
+        lastTs: 0,
+        count: 0,
+        isCurrent: false,
+      };
       map.set(id, a);
     }
     a.tokens += freshTokens(e);
+    a.setupTokens += e.cacheWriteTokens;
     a.cacheTokens += e.cacheReadTokens;
     a.costCents += e.costCents ?? 0;
+    a.setupCostCents += e.setupCostCents ?? 0;
+    a.reusedCostCents += e.reusedCostCents ?? 0;
     a.lastTs = Math.max(a.lastTs, e.timestamp);
     a.count += 1;
   }
@@ -40,10 +54,11 @@ export function aggregateModels(events: UsageEvent[]): ModelAggregate[] {
     const key = e.model ?? "unknown";
     let m = map.get(key);
     if (!m) {
-      m = { model: key, totalTokens: 0, cacheTokens: 0, costCents: 0 };
+      m = { model: key, totalTokens: 0, setupTokens: 0, cacheTokens: 0, costCents: 0 };
       map.set(key, m);
     }
     m.totalTokens += freshTokens(e);
+    m.setupTokens = (m.setupTokens ?? 0) + e.cacheWriteTokens;
     m.cacheTokens = (m.cacheTokens ?? 0) + e.cacheReadTokens;
     m.costCents += e.costCents ?? 0;
   }

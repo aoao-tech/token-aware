@@ -33,6 +33,8 @@ export interface ProviderData {
   monthlyTokens: number;
   /** Cache-read tokens this month, tracked separately. */
   monthlyCacheTokens?: number;
+  /** The share of monthlyTokens spent loading context rather than answering. */
+  monthlySetupTokens?: number;
   monthlyCostCents?: number;
   /**
    * Whether the monthly total lines up with this provider's actual billing

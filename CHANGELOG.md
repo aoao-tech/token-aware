@@ -2,6 +2,19 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.22]
+
+- Changed: session and monthly figures now follow the same rule as the last turn.
+  In tokens mode they count what was actually said, not the context loaded to make
+  saying it possible. Opening a session and typing "hi" showed 40k, of which the
+  entire exchange was 16 tokens and the other 40,187 was the system prompt, tool
+  definitions and project files being loaded once.
+- Changed: the details panel's tables now split those three things into their own
+  columns (answering / loading context / re-reading context) rather than lumping
+  loading in with real usage.
+- Per-usage billing is unaffected: dollar figures remain the true totals, since all
+  of it is genuinely charged.
+
 ## [0.2.21]
 
 - Fixed: open windows no longer rate-limit each other out of the plan-limit gauges.
