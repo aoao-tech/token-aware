@@ -13,13 +13,13 @@
  * Run with `npm test`.
  */
 import { claudeCostCents } from "./claudePricing";
+import { close, suite, test } from "./testHarness";
+
+suite("claudePricing");
 
 const MTOK = 1_000_000;
 const JULY_2026 = Date.UTC(2026, 6, 22);
 const SEPT_2026 = Date.UTC(2026, 8, 15);
-
-let failures = 0;
-let checks = 0;
 
 /** Cost of 1M tokens of a single kind, in dollars, for readable expectations. */
 function perMTok(
@@ -37,13 +37,9 @@ function perMTok(
   return claudeCostCents(model, t, atMs) / 100;
 }
 
+/** Every expectation in this file is a dollar amount, so tolerance is in dollars. */
 function eq(name: string, got: number, want: number): void {
-  checks++;
-  const ok = Math.abs(got - want) < 1e-9;
-  if (!ok) {
-    failures++;
-    console.log(`FAIL  ${name}\n        got $${got}  want $${want}`);
-  }
+  test(name, () => close(got, want, name));
 }
 
 /** One row of the published table, checked cell by cell. */
@@ -165,6 +161,3 @@ eq(
   5
 );
 eq("absent speed is standard pricing", perMTok("claude-opus-4-8", "input"), 5);
-
-console.log(failures ? `\n${failures} of ${checks} checks FAILED` : `all ${checks} checks passed`);
-process.exit(failures ? 1 : 0);

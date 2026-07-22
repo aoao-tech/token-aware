@@ -38,10 +38,16 @@ All notable changes to the **Token Aware** extension are documented in this file
   multipliers stacking on top. A `speed: "fast"` request to a model that does
   not offer it runs and bills at standard speed, so the flag alone never
   inflates a figure.
-- Added: `npm test` re-derives every rate in Anthropic's published table from
-  the multipliers this file stores, all 14 model rows plus both worked examples
-  from the docs and a regression per bug above. 86 checks. A stale table now
-  fails loudly instead of quietly mispricing.
+- Fixed: credit spend was discarded whenever the usage response contained no
+  limit bucket this parser recognized, even though the two are read
+  independently and the spend had parsed fine. This endpoint has changed its
+  limits shape before, so an unrelated move would have taken the one figure
+  that is actual money off screen. Found by the tests below, not in use.
+- Added: `npm test`, 207 checks across pricing, the usage endpoint, the shared
+  limits store, grouping and formatting. Pricing re-derives every rate in
+  Anthropic's published table, all 14 model rows plus both worked examples from
+  the docs. The usage endpoint is pinned against a captured live response, so a
+  shape change fails loudly rather than quietly blanking the gauges.
 
 ## [0.2.25]
 

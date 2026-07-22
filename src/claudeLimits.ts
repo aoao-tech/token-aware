@@ -132,6 +132,16 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
     return { error: `usage request failed: ${err instanceof Error ? err.message : String(err)}` };
   }
 
+  return parseUsageResponse(data);
+}
+
+/**
+ * Turn a usage payload into limits and credit spend. Split out from the fetch
+ * so the response shapes can be tested without a network or a live token: this
+ * endpoint is unofficial and has already changed shape once, which is exactly
+ * the kind of thing that should fail in a test rather than in the status bar.
+ */
+export function parseUsageResponse(data: Record<string, unknown>): ClaudeLimitsResult {
   const credits = parseCreditSpend(data.spend);
 
   // Preferred: the structured `limits` array (includes model-scoped buckets).
@@ -156,9 +166,13 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
       resetsAt: Number.isNaN(resetsAt) ? undefined : resetsAt,
     });
   }
+  // Credit spend is reported even when no limit bucket is recognized. The two
+  // are parsed independently, and this endpoint has changed its limits shape
+  // before; losing the one figure that is actual money because an unrelated
+  // part of the payload moved would be the worst way to fail here.
   return limits.length
     ? { limits, credits }
-    : { error: "usage response had no recognizable limit buckets" };
+    : { credits, error: "usage response had no recognizable limit buckets" };
 }
 
 /**
