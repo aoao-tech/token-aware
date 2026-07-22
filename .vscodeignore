@@ -11,3 +11,4 @@ package-lock.json
 **/*.vsix
 /tmp/**
 .github/**
+out/**

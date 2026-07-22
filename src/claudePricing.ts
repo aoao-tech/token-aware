@@ -1,6 +1,9 @@
 /**
- * Anthropic list prices, USD per 1M tokens, from the official pricing table
- * (docs.claude.com/en/docs/about-claude/pricing, read 2026-07-22).
+ * Anthropic list prices, USD per 1M tokens, taken solely from Anthropic's own
+ * published table at https://platform.claude.com/docs/en/about-claude/pricing
+ * (read 2026-07-22). Third-party trackers disagree with it and with each
+ * other, so none are used here. `npm test` re-derives every published rate
+ * from this file, so a stale table fails loudly rather than quietly mispricing.
  *
  * Matched per model *version*, not per family. Matching on the family name
  * alone was wrong by up to 3x in both directions: Opus 4.5 and later cost a

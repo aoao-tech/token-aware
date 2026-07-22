@@ -141,7 +141,8 @@
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "compile": "tsc --noEmit",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "test": "esbuild src/claudePricing.test.ts --bundle --platform=node --outfile=out/test.js --log-level=error && node out/test.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
