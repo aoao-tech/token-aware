@@ -32,9 +32,16 @@ All notable changes to the **Token Aware** extension are documented in this file
   the current session and last turn would cost at API rates, which is the rate
   credits drain at once a plan limit is reached. Knowing the rate before the
   meter starts is the point.
-- Note: fast mode is not modelled, because nothing in a transcript identifies
-  it. It bills Opus 4.8 at $10/$50 rather than $5/$25, so heavy `/fast` use
-  means real spend is about double what is shown for those calls.
+- Added: fast mode is now priced correctly. It is recorded per call as
+  `usage.speed`, and it is not a multiplier but its own rate card: Opus 4.8
+  doubles to $10/$50 and Opus 4.7 goes six-fold to $30/$150, with cache
+  multipliers stacking on top. A `speed: "fast"` request to a model that does
+  not offer it runs and bills at standard speed, so the flag alone never
+  inflates a figure.
+- Added: `npm test` re-derives every rate in Anthropic's published table from
+  the multipliers this file stores, all 14 model rows plus both worked examples
+  from the docs and a regression per bug above. 86 checks. A stale table now
+  fails loudly instead of quietly mispricing.
 
 ## [0.2.25]
 

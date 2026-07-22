@@ -14,10 +14,14 @@
  * out per row, since they are defined that way and stay correct if a base
  * price changes: 5-minute write 1.25x, 1-hour write 2x, read 0.1x.
  *
- * Not modelled, because nothing in a transcript identifies them: the Batch API
- * 50% discount, the `inference_geo: "us"` 1.1x, and fast mode (Opus 4.8 at
- * $10/$50). Fast mode is the one that could bite, so it is called out in the
- * README rather than silently assumed away.
+ * Fast mode is priced from `usage.speed` in the transcript, which records it
+ * per call. It is not a multiplier but its own rate card, and a steep one:
+ * Opus 4.8 doubles to $10/$50, Opus 4.7 goes six-fold to $30/$150. Cache
+ * multipliers stack on top of it.
+ *
+ * Still not modelled, because nothing in a transcript identifies them: the
+ * Batch API 50% discount and the `inference_geo: "us"` 1.1x. Neither applies
+ * to Claude Code usage, and both would only lower or barely raise the figure.
  *
  * Long context needs no special case: Fable 5, Opus 4.6+, Sonnet 5 and Sonnet
  * 4.6 include the full 1M window at standard rates.
@@ -60,8 +64,25 @@ const RATES: ReadonlyArray<{ match: RegExp; rate: Rate | ((atMs: number) => Rate
   { match: /./, rate: { input: 5, output: 25 } },
 ];
 
-function rateFor(model: string | undefined, atMs: number): Rate {
+/**
+ * Fast mode rates, which replace the standard ones rather than scaling them.
+ * Only Opus 4.8 and 4.7 offer it; anything else with `speed: "fast"` set runs
+ * and bills at standard speed, so it falls through to the normal table.
+ */
+const FAST_RATES: ReadonlyArray<{ match: RegExp; rate: Rate }> = [
+  { match: /opus-4-8/, rate: { input: 10, output: 50 } },
+  { match: /opus-4-7/, rate: { input: 30, output: 150 } },
+];
+
+function rateFor(model: string | undefined, atMs: number, fast: boolean): Rate {
   const m = (model ?? "").toLowerCase();
+  if (fast) {
+    for (const entry of FAST_RATES) {
+      if (entry.match.test(m)) {
+        return entry.rate;
+      }
+    }
+  }
   for (const entry of RATES) {
     if (entry.match.test(m)) {
       return typeof entry.rate === "function" ? entry.rate(atMs) : entry.rate;
@@ -80,6 +101,12 @@ export interface ClaudeTokens {
   cacheWrite5m?: number;
   /** Cache writes known to be 1-hour, billed at 2x input rather than 1.25x. */
   cacheWrite1h?: number;
+  /**
+   * `usage.speed` as recorded for the call. "fast" bills Opus 4.8 at double
+   * and Opus 4.7 at six times the standard rate, so it is read rather than
+   * assumed. Absent means standard, which is right: fast mode is opt-in.
+   */
+  speed?: string;
 }
 
 /**
@@ -94,7 +121,7 @@ export function claudeCostCents(
   t: ClaudeTokens,
   atMs: number = Date.now()
 ): number {
-  const r = rateFor(model, atMs);
+  const r = rateFor(model, atMs, t.speed === "fast");
   // Prefer the recorded 5m/1h split; fall back to the undifferentiated total.
   // Claude Code writes a 1-hour cache in normal use, and pricing it as
   // 5-minute understates every cache write by 60%, so the fallback assumes

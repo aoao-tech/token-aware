@@ -387,6 +387,8 @@ export class ClaudeProvider implements Provider {
       const cc = usage.cache_creation as Record<string, unknown> | undefined;
       const cacheWrite5m = cc ? num(cc.ephemeral_5m_input_tokens) : undefined;
       const cacheWrite1h = cc ? num(cc.ephemeral_1h_input_tokens) : undefined;
+      // Fast mode is its own rate card, not a multiplier: Opus 4.8 doubles.
+      const speed = typeof usage.speed === "string" ? usage.speed : undefined;
       const total = input + output + cacheRead + cacheWrite;
       if (total === 0) {
         continue;
@@ -411,17 +413,17 @@ export class ClaudeProvider implements Provider {
         totalTokens: total,
         costCents: claudeCostCents(
           model,
-          { input, output, cacheRead, cacheWrite, cacheWrite5m, cacheWrite1h },
+          { input, output, cacheRead, cacheWrite, cacheWrite5m, cacheWrite1h, speed },
           priceAt
         ),
         setupCostCents: claudeCostCents(
           model,
-          { input: 0, output: 0, cacheRead: 0, cacheWrite, cacheWrite5m, cacheWrite1h },
+          { input: 0, output: 0, cacheRead: 0, cacheWrite, cacheWrite5m, cacheWrite1h, speed },
           priceAt
         ),
         reusedCostCents: claudeCostCents(
           model,
-          { input: 0, output: 0, cacheRead, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+          { input: 0, output: 0, cacheRead, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: 0, speed },
           priceAt
         ),
       });

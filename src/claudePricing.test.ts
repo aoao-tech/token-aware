@@ -119,5 +119,52 @@ eq(
 // An unknown model must not be priced as the cheapest option.
 eq("unknown model prices as Opus 4.8", perMTok("claude-something-unreleased", "input"), 5);
 
+// --- Fast mode, read from usage.speed rather than assumed away. --------------
+const fast = (model: string, kind: "input" | "output"): number =>
+  claudeCostCents(
+    model,
+    { input: kind === "input" ? MTOK : 0, output: kind === "output" ? MTOK : 0, cacheRead: 0, cacheWrite: 0, speed: "fast" },
+    JULY_2026
+  ) / 100;
+eq("fast Opus 4.8 input is $10", fast("claude-opus-4-8", "input"), 10);
+eq("fast Opus 4.8 output is $50", fast("claude-opus-4-8", "output"), 50);
+eq("fast Opus 4.7 input is $30", fast("claude-opus-4-7", "input"), 30);
+eq("fast Opus 4.7 output is $150", fast("claude-opus-4-7", "output"), 150);
+// Cache multipliers stack on top of fast mode's rate card, not the standard one.
+eq(
+  "fast Opus 4.8 1h cache write is 2x its $10 base",
+  claudeCostCents(
+    "claude-opus-4-8",
+    { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: MTOK, speed: "fast" },
+    JULY_2026
+  ) / 100,
+  20
+);
+// Fast mode is unavailable on Opus 4.6 and below: such a request runs and
+// bills at standard speed, so the flag must not inflate it.
+eq(
+  "fast flag on Opus 4.6 still bills standard",
+  claudeCostCents("claude-opus-4-6", { input: MTOK, output: 0, cacheRead: 0, cacheWrite: 0, speed: "fast" }, JULY_2026) /
+    100,
+  5
+);
+eq(
+  "fast flag on Sonnet still bills standard",
+  claudeCostCents("claude-sonnet-5", { input: MTOK, output: 0, cacheRead: 0, cacheWrite: 0, speed: "fast" }, JULY_2026) /
+    100,
+  2
+);
+// "standard" and an absent field must both mean standard pricing.
+eq(
+  "speed=standard is standard pricing",
+  claudeCostCents(
+    "claude-opus-4-8",
+    { input: MTOK, output: 0, cacheRead: 0, cacheWrite: 0, speed: "standard" },
+    JULY_2026
+  ) / 100,
+  5
+);
+eq("absent speed is standard pricing", perMTok("claude-opus-4-8", "input"), 5);
+
 console.log(failures ? `\n${failures} of ${checks} checks FAILED` : `all ${checks} checks passed`);
 process.exit(failures ? 1 : 0);
