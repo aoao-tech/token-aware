@@ -8,7 +8,7 @@ import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
 import { AgentScope, getConfig, UnitSetting } from "./config";
 import { LimitsStore } from "./limitsStore";
-import { PlanLimit, Provider, ProviderData, ProviderUnit } from "./provider";
+import { CreditSpend, PlanLimit, Provider, ProviderData, ProviderUnit } from "./provider";
 import { ModelAggregate, UsageEvent } from "./types";
 import { freshTokens } from "./util";
 import { JsonlWatcher } from "./watcher";
@@ -47,6 +47,8 @@ export class ClaudeProvider implements Provider {
   private planChecked = false;
   /** Last successful reading, kept so a failed lookup doesn't blank the gauges. */
   private lastGoodLimits: PlanLimit[] | undefined;
+  /** Kept for the same reason, and separately: credit spend is real money. */
+  private lastGoodCredits: CreditSpend | undefined;
   private readonly limitsStore: LimitsStore;
 
   constructor(storageDir?: string) {
@@ -177,6 +179,7 @@ export class ClaudeProvider implements Provider {
     const shared = this.limitsStore.read();
     if (shared?.limits.length) {
       this.lastGoodLimits = shared.limits;
+      this.lastGoodCredits = shared.credits;
     }
 
     const waiting = shared?.retryUntil != null && now < shared.retryUntil;
@@ -189,16 +192,23 @@ export class ClaudeProvider implements Provider {
     const result = await fetchClaudeLimits();
     if (result.limits?.length) {
       this.lastGoodLimits = result.limits;
+      // A successful reading is authoritative about credits too, including
+      // saying there are none: turning credits off should take the line away.
+      this.lastGoodCredits = result.credits;
       this.limitsStore.write({ at: now, limits: result.limits, credits: result.credits });
       return result;
     }
 
     // A lookup failing doesn't mean the numbers changed. Keep showing the last
     // good reading rather than making the gauges disappear and look like they
-    // were never real.
+    // were never real. Credit spend is carried through the same way: the
+    // endpoint rate-limits within minutes, so dropping it on every failed call
+    // would blink the one figure that is actual money in and out of view.
     const keep = this.lastGoodLimits ?? shared?.limits;
+    const keepCredits = this.lastGoodCredits ?? shared?.credits;
     if (keep?.length) {
       result.limits = keep;
+      result.credits = result.credits ?? keepCredits;
       if (result.retryAfterMs) {
         // Being asked to wait is routine and the numbers are still good, so
         // there is nothing here worth warning about.
@@ -209,6 +219,7 @@ export class ClaudeProvider implements Provider {
     this.limitsStore.write({
       at: shared?.at ?? 0,
       limits: keep ?? [],
+      credits: keepCredits,
       retryUntil: now + (result.retryAfterMs ?? RETRY_MS),
     });
     return result;
@@ -370,15 +381,26 @@ export class ClaudeProvider implements Provider {
       const output = num(usage.output_tokens);
       const cacheRead = num(usage.cache_read_input_tokens);
       const cacheWrite = num(usage.cache_creation_input_tokens);
+      // A 1-hour cache write costs 2x base input against a 5-minute write's
+      // 1.25x, and Claude Code uses the 1-hour cache in normal operation, so
+      // the split is worth carrying rather than averaging away.
+      const cc = usage.cache_creation as Record<string, unknown> | undefined;
+      const cacheWrite5m = cc ? num(cc.ephemeral_5m_input_tokens) : undefined;
+      const cacheWrite1h = cc ? num(cc.ephemeral_1h_input_tokens) : undefined;
       const total = input + output + cacheRead + cacheWrite;
       if (total === 0) {
         continue;
       }
       const model = msg.model as string | undefined;
       const key = (obj.requestId as string) ?? (obj.uuid as string) ?? `${byRequest.size}`;
+      const at = Date.parse((obj.timestamp as string) ?? "") || 0;
+      // Prices are read as of the call's own timestamp, so a month spanning a
+      // price change (Sonnet 5's introductory rate ends 2026-08-31) stays
+      // correct instead of being repriced wholesale at today's rate.
+      const priceAt = at || Date.now();
       // Last write per request wins (final streamed usage).
       byRequest.set(key, {
-        timestamp: Date.parse((obj.timestamp as string) ?? "") || 0,
+        timestamp: at,
         model,
         conversationId: sessionId,
         turn,
@@ -387,19 +409,21 @@ export class ClaudeProvider implements Provider {
         cacheReadTokens: cacheRead,
         cacheWriteTokens: cacheWrite,
         totalTokens: total,
-        costCents: claudeCostCents(model, { input, output, cacheRead, cacheWrite }),
-        setupCostCents: claudeCostCents(model, {
-          input: 0,
-          output: 0,
-          cacheRead: 0,
-          cacheWrite,
-        }),
-        reusedCostCents: claudeCostCents(model, {
-          input: 0,
-          output: 0,
-          cacheRead,
-          cacheWrite: 0,
-        }),
+        costCents: claudeCostCents(
+          model,
+          { input, output, cacheRead, cacheWrite, cacheWrite5m, cacheWrite1h },
+          priceAt
+        ),
+        setupCostCents: claudeCostCents(
+          model,
+          { input: 0, output: 0, cacheRead: 0, cacheWrite, cacheWrite5m, cacheWrite1h },
+          priceAt
+        ),
+        reusedCostCents: claudeCostCents(
+          model,
+          { input: 0, output: 0, cacheRead, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+          priceAt
+        ),
       });
     }
 

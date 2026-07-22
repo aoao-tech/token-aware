@@ -2,8 +2,12 @@
 src/**
 node_modules/**
 .gitignore
+.vscodeignore
 tsconfig.json
 esbuild.js
+package-lock.json
 **/*.map
 **/*.ts
+**/*.vsix
 /tmp/**
+.github/**

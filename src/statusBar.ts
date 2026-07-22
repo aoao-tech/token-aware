@@ -232,6 +232,20 @@ export class StatusBar implements vscode.Disposable {
       md.appendMarkdown(
         `Usage credits: **${formatCents(data.credits.usedCents)}**${cap} this month\n\n`
       );
+      // On a subscription the dollar figures are hidden, since inside the plan
+      // they aren't money. With credits switched on they are the rate credits
+      // will drain at the moment the plan limit runs out, and that rate is
+      // knowable now rather than after the first bill for it.
+      const rate: string[] = [];
+      if (data.unit === "tokens" && cur) {
+        rate.push(`${formatCents(cur.costCents)} this session`);
+      }
+      if (data.unit === "tokens" && last) {
+        rate.push(`${formatCents(last.costCents ?? 0)} last turn`);
+      }
+      if (rate.length) {
+        md.appendMarkdown(`⤷ At API rates: ${rate.join(" · ")}\n\n`);
+      }
       // The useful warning isn't "you spent money", it's "the next message is
       // the one that starts costing", which is knowable before it happens.
       const atLimit = this.headlineLimits(data).some((l) => l.pct >= 90);

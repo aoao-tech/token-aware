@@ -2,18 +2,29 @@
   "name": "token-aware",
   "displayName": "Token Aware",
   "description": "Live AI token/dollar usage in the status bar. Auto-detects Cursor and Claude Code, your plan type, and shows per-session, last-call, and monthly spend.",
-  "version": "0.2.25",
+  "version": "0.2.26",
   "publisher": "aoao-tech",
   "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/aoao-tech/token-aware.git"
   },
+  "bugs": {
+    "url": "https://github.com/aoao-tech/token-aware/issues"
+  },
+  "homepage": "https://github.com/aoao-tech/token-aware#readme",
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
   ],
   "keywords": [
     "tokens",
@@ -23,6 +34,15 @@
     "cursor",
     "claude"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Token Aware reads local Cursor and Claude Code data from disk, which is unavailable in virtual workspaces."
+    }
+  },
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
@@ -31,11 +51,13 @@
     "commands": [
       {
         "command": "tokenAware.refresh",
-        "title": "Token Aware: Refresh Now"
+        "title": "Refresh Now",
+        "category": "Token Aware"
       },
       {
         "command": "tokenAware.showDetails",
-        "title": "Token Aware: Show Details"
+        "title": "Show Details",
+        "category": "Token Aware"
       }
     ],
     "configuration": {

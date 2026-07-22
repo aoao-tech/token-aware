@@ -2,6 +2,40 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.26]
+
+- Fixed: the pricing table was matching on model family, so every dollar figure
+  was wrong, by up to 3x in both directions at once. Opus 4.5 and later were
+  charged the deprecated Opus 4.1 rate of $15/$75 when they cost $5/$25, and
+  Fable, matching neither "opus" nor "haiku", fell through a catch-all to
+  Sonnet's $3/$15 when it costs $10/$50. Prices are now matched per model
+  version against Anthropic's published table. On the month that produced this
+  release, Opus was overstated by 60% and Fable understated by 309%; the two
+  nearly cancelled in the total, which is exactly why it went unnoticed.
+- Fixed: cache writes were all priced as 5-minute (1.25x input). Claude Code
+  writes a 1-hour cache (2x input) in normal use, which was 99.6% of cache
+  writes here. The 5m/1h split is now read per call, and where a transcript
+  does not record it the costlier 1-hour rate is assumed rather than the
+  cheaper one.
+- Fixed: Haiku was priced at the retired Haiku 3.5 rate, and Sonnet 5's
+  introductory pricing was ignored. Each call is now priced as of its own
+  timestamp, so a month spanning the 2026-08-31 expiry stays correct instead of
+  being repriced wholesale.
+- Changed: an unrecognized model now prices as Opus 4.8 rather than as the
+  cheapest option. For a tool whose job is warning about spend, guessing low is
+  the worse failure.
+- Fixed: usage credits vanished from the status bar and tooltip whenever the
+  plan-limit lookup failed or was rate-limited, which is often, because a
+  failed lookup rewrote the shared cache without them. They now survive a
+  failure the same way the gauges already did.
+- Added: with usage credits enabled, the tooltip and details panel show what
+  the current session and last turn would cost at API rates, which is the rate
+  credits drain at once a plan limit is reached. Knowing the rate before the
+  meter starts is the point.
+- Note: fast mode is not modelled, because nothing in a transcript identifies
+  it. It bills Opus 4.8 at $10/$50 rather than $5/$25, so heavy `/fast` use
+  means real spend is about double what is shown for those calls.
+
 ## [0.2.25]
 
 - Added: conversation size, the amount resent to the model with every message.

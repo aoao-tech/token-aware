@@ -118,8 +118,13 @@ anywhere except to the tool's own backend.
 - Not affiliated with or endorsed by Anysphere (Cursor) or Anthropic (Claude).
 - Cursor's usage endpoints (`src/cursorApi.ts`) are **unofficial** and may change; the
   client fails soft (shows "n/a" instead of erroring).
-- Claude dollar amounts are **estimates** from a bundled pricing table
-  (`src/claudePricing.ts`); token counts are exact.
+- Claude dollar amounts come from a bundled table of Anthropic list prices
+  (`src/claudePricing.ts`), matched per model version and dated 2026-07-22; token
+  counts are exact. Three things a transcript does not record are not modelled, and
+  each makes the real figure lower or higher than shown: the Batch API's 50%
+  discount, the `inference_geo: "us"` 1.1x, and **fast mode**, which bills Opus 4.8
+  at $10/$50 per MTok instead of $5/$25. Heavy `/fast` use means real spend is
+  roughly double what is shown for those calls.
 - Plan auto-detection is heuristic (e.g. an enterprise seat without usage-based billing
   is still shown in dollars); use the `unit` settings to override.
 

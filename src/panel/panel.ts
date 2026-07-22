@@ -140,7 +140,17 @@ export class DetailsPanel implements vscode.Disposable {
               Math.min(100, d.credits.pct ?? 0)
             )}%"></div></div></td><td>${formatCents(d.credits.usedCents)}${
               d.credits.limitCents != null ? ` of ${formatCents(d.credits.limitCents)}` : ""
-            }</td></tr></table><p class="sub">Usage past your plan's included limits is charged at API rates.</p>`
+            }</td></tr>${
+              showCost
+                ? ""
+                : `<tr><td>This session at API rates</td><td></td><td>${formatCents(
+                    d.currentAgent?.costCents ?? 0
+                  )}</td></tr><tr><td>Last turn at API rates</td><td></td><td>${formatCents(
+                    d.lastCall?.costCents ?? 0
+                  )}</td></tr>`
+            }</table><p class="sub">Usage past your plan's included limits is charged at API rates.${
+              showCost ? "" : " The API-rate rows are what this usage would draw from credits once that happens."
+            }</p>`
           : ""
       }
 
