@@ -21,6 +21,20 @@ export function replyTokens(e: UsageEvent): number {
   return e.inputTokens + e.outputTokens;
 }
 
+/** Tokens spent answering: the total with the context-loading ("setup") share removed. */
+export function answeringTokens(total: number | undefined, setup: number | undefined): number {
+  return Math.max(0, (total ?? 0) - (setup ?? 0));
+}
+
+/**
+ * Cost of answering alone, in cents: the turn's cost with both the
+ * context-loading ("setup") and re-reading ("reused") shares taken out, so it
+ * lines up with those two being itemized separately.
+ */
+export function answeringCostCents(e: UsageEvent): number {
+  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0) - (e.reusedCostCents ?? 0));
+}
+
 export function formatTokens(n: number): string {
   if (n < 1000) {
     return String(n);

@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { shortId } from "../agents";
 import { ProviderData } from "../provider";
 import { ProviderMap } from "../tracker";
-import { AgentSpend, UsageEvent } from "../types";
-import { formatCents, formatDuration, formatTokens, replyTokens } from "../util";
+import { AgentSpend } from "../types";
+import { answeringCostCents, answeringTokens, formatCents, formatDuration, formatTokens, replyTokens } from "../util";
 
 export class DetailsPanel implements vscode.Disposable {
   private static current: DetailsPanel | undefined;
@@ -96,14 +96,14 @@ export class DetailsPanel implements vscode.Disposable {
             d.lastCall
               ? showCost
                 ? formatCents(d.lastCall.costCents ?? 0)
-                : amount(replyCostCents(d.lastCall), replyTokens(d.lastCall))
+                : amount(answeringCostCents(d.lastCall), replyTokens(d.lastCall))
               : "-"
           }</div>
           <div class="sub">${
             d.lastCall
               ? (() => {
                   const lc = d.lastCall;
-                  const parts = [`${amount(replyCostCents(lc), replyTokens(lc))} answering`];
+                  const parts = [`${amount(answeringCostCents(lc), replyTokens(lc))} answering`];
                   if (lc.cacheWriteTokens) {
                     parts.push(`${amount(lc.setupCostCents, lc.cacheWriteTokens)} loading context`);
                   }
@@ -125,7 +125,7 @@ export class DetailsPanel implements vscode.Disposable {
               .map(
                 (m) =>
                   `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(
-                    answering(m.totalTokens, m.setupTokens)
+                    answeringTokens(m.totalTokens, m.setupTokens)
                   )}</td><td>${formatTokens(m.setupTokens ?? 0)}</td><td>${formatTokens(
                     m.cacheTokens ?? 0
                   )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
@@ -189,7 +189,7 @@ export class DetailsPanel implements vscode.Disposable {
                   `<tr><td>${a.isCurrent ? "\u25b6" : ""}</td><td>${escapeHtml(
                     this.label(a)
                   )}</td>${showCost ? `<td>${formatCents(a.costCents)}</td>` : ""}<td>${formatTokens(
-                    answering(a.tokens, a.setupTokens)
+                    answeringTokens(a.tokens, a.setupTokens)
                   )}</td><td>${formatTokens(a.setupTokens)}</td><td>${formatTokens(
                     a.cacheTokens
                   )}</td><td>${a.count}</td><td>${fmtTime(a.lastTs)}</td></tr>`
@@ -207,7 +207,7 @@ export class DetailsPanel implements vscode.Disposable {
               .map(
                 (m) =>
                   `<tr><td>${escapeHtml(m.model)}</td><td>${formatTokens(
-                    answering(m.totalTokens, m.setupTokens)
+                    answeringTokens(m.totalTokens, m.setupTokens)
                   )}</td><td>${formatTokens(m.setupTokens ?? 0)}</td><td>${formatTokens(
                     m.cacheTokens ?? 0
                   )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
@@ -266,16 +266,6 @@ function fmtTime(ms: number): string {
     return "";
   }
   return new Date(ms).toLocaleString();
-}
-
-/** Tokens spent answering: the total with the context-loading share removed. */
-function answering(total: number | undefined, setup: number | undefined): number {
-  return Math.max(0, (total ?? 0) - (setup ?? 0));
-}
-
-/** Cost of answering, with the context-loading ("setup") share taken out. */
-function replyCostCents(e: UsageEvent): number {
-  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0));
 }
 
 function escapeHtml(s: string): string {

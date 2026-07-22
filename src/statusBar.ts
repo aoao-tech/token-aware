@@ -3,8 +3,8 @@ import { shortId } from "./agents";
 import { DisplayMode, TrackerConfig } from "./config";
 import { PlanLimit, ProviderData, ProviderUnit } from "./provider";
 import { ProviderMap } from "./tracker";
-import { AgentSpend, UsageEvent } from "./types";
-import { formatCents, formatDuration, formatTokens, replyTokens } from "./util";
+import { AgentSpend } from "./types";
+import { answeringCostCents, answeringTokens, formatCents, formatDuration, formatTokens, replyTokens } from "./util";
 
 export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
@@ -188,7 +188,7 @@ export class StatusBar implements vscode.Disposable {
           : formatTokens(replyTokens(last));
       md.appendMarkdown(`Last turn: **${headline}**\n\n`);
       md.appendMarkdown(
-        `\u2937 ${this.amount(data.unit, replyCostCents(last), replyTokens(last))} answering your message\n\n`
+        `\u2937 ${this.amount(data.unit, answeringCostCents(last), replyTokens(last))} answering your message\n\n`
       );
       if (last.cacheWriteTokens) {
         md.appendMarkdown(
@@ -288,16 +288,6 @@ export class StatusBar implements vscode.Disposable {
  * the point is cost per message, not running out of room.
  */
 const LARGE_CONTEXT_TOKENS = 120_000;
-
-/** Tokens spent answering: the total with the context-loading share removed. */
-function answeringTokens(total: number | undefined, setup: number | undefined): number {
-  return Math.max(0, (total ?? 0) - (setup ?? 0));
-}
-
-/** Cost of answering alone: the total minus the context-loading and re-reading shares. */
-function replyCostCents(e: UsageEvent): number {
-  return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0) - (e.reusedCostCents ?? 0));
-}
 
 /** Escape markdown control characters in externally-derived text. */
 function escapeMd(s: string): string {

@@ -61,24 +61,27 @@ export class Tracker implements vscode.Disposable {
     try {
       this.data.set(p.id, await p.refresh());
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       const prev = this.data.get(p.id);
-      this.data.set(p.id, {
-        id: p.id,
-        label: p.label,
-        icon: p.icon,
-        unit: prev?.unit ?? "tokens",
-        status: "error",
-        currentAgent: prev?.currentAgent,
-        agents: prev?.agents ?? [],
-        lastCall: prev?.lastCall,
-        monthlyTokens: prev?.monthlyTokens ?? 0,
-        monthlyCacheTokens: prev?.monthlyCacheTokens,
-        monthlyCostCents: prev?.monthlyCostCents,
-        limits: prev?.limits,
-        quotaPct: prev?.quotaPct,
-        error: err instanceof Error ? err.message : String(err),
-        updatedAt: Date.now(),
-      });
+      // Keep the last good reading and just flag the failure, so a transient
+      // refresh error doesn't blank fields (e.g. planLabel, credits, the
+      // monthlyMatchesBillingCycle flag) that were fine a moment ago.
+      this.data.set(
+        p.id,
+        prev
+          ? { ...prev, status: "error", error: message, updatedAt: Date.now() }
+          : {
+              id: p.id,
+              label: p.label,
+              icon: p.icon,
+              unit: "tokens",
+              status: "error",
+              agents: [],
+              monthlyTokens: 0,
+              error: message,
+              updatedAt: Date.now(),
+            }
+      );
     }
     this.emitter.fire(this.data);
   }

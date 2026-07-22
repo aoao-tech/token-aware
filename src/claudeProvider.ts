@@ -456,12 +456,6 @@ export class ClaudeProvider implements Provider {
 }
 
 /**
- * "Last call" as the cost of your last message, not one internal API request.
- * A single reply is often several tool-call round trips; this sums every
- * event sharing the most recent event's (conversation, turn) pair, since
- * that's what a per-usage-billed user actually wants to know they spent.
- */
-/**
  * How big the conversation has become, from the prompt of its most recent
  * single call: everything resent that time. Deliberately not the turn total,
  * which sums several calls that each resend the same conversation and would
@@ -475,6 +469,12 @@ function conversationSize(events: UsageEvent[]): number | undefined {
   return last.inputTokens + last.cacheReadTokens + last.cacheWriteTokens;
 }
 
+/**
+ * "Last call" as the cost of your last message, not one internal API request.
+ * A single reply is often several tool-call round trips; this sums every
+ * event sharing the most recent event's (conversation, turn) pair, since
+ * that's what a per-usage-billed user actually wants to know they spent.
+ */
 function lastTurnEvent(events: UsageEvent[]): UsageEvent | undefined {
   const last = events.at(-1);
   if (!last || last.turn == null || !last.conversationId) {
