@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # The point of the pricing suite is to catch a table that has gone stale
+  # months after anyone last thought about it, so it also runs on a schedule
+  # rather than only when someone happens to push.
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Both, deliberately: this extension resolves per-platform paths (APPDATA
+    # on Windows, the login Keychain on macOS, ~/.config elsewhere) and the
+    # store writes real files, so a Linux-only run would miss half of it.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run compile
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Catches packaging problems (a missing icon, a bad engines range, a file
+      # that should not ship) at push time rather than at publish time.
+      - name: Package
+        if: matrix.os == 'ubuntu-latest'
+        run: npx vsce package --allow-star-activation --out token-aware.vsix
+
+      - name: Upload package
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: token-aware-vsix
+          path: token-aware.vsix
