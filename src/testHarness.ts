@@ -81,15 +81,20 @@ function fmt(v: unknown): string {
   return typeof v === "string" ? JSON.stringify(v) : String(v);
 }
 
-/** Print results and exit non-zero if anything failed. */
+/**
+ * Print results and set a non-zero exit code if anything failed. Uses
+ * process.exitCode rather than process.exit() so buffered stdout is flushed
+ * before the process ends: on CI stdout is a pipe, where an immediate
+ * process.exit() can truncate the very summary line that says what failed.
+ */
 export function report(): void {
   if (failures.length) {
     for (const f of failures) {
       console.log(`FAIL  [${f.suite}] ${f.name}\n        ${f.detail}`);
     }
     console.log(`\n${failures.length} of ${checks} checks FAILED`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log(`all ${checks} checks passed`);
-  process.exit(0);
 }

@@ -142,13 +142,14 @@
     "watch": "node esbuild.js --watch",
     "compile": "tsc --noEmit",
     "package": "vsce package --no-dependencies",
-    "test": "esbuild src/test-all.ts --bundle --platform=node --outfile=out/test.js --log-level=error && node out/test.js"
+    "test": "tsx src/test-all.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.20.0",
+    "tsx": "4.23.1",
     "typescript": "^5.4.0"
   }
 }

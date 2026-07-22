@@ -168,7 +168,7 @@ export class StatusBar implements vscode.Disposable {
       md.appendMarkdown(
         `\u2937 **${this.amount(data.unit, cur.costCents, cur.tokens)}** \u00b7 ${this.amount(
           data.unit,
-          Math.max(0, cur.costCents - cur.setupCostCents - cur.reusedCostCents),
+          answeringCostCents(cur),
           answeringTokens(cur.tokens, cur.setupTokens)
         )} answering + ${this.amount(
           data.unit,

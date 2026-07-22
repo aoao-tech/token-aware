@@ -27,11 +27,16 @@ export function answeringTokens(total: number | undefined, setup: number | undef
 }
 
 /**
- * Cost of answering alone, in cents: the turn's cost with both the
- * context-loading ("setup") and re-reading ("reused") shares taken out, so it
- * lines up with those two being itemized separately.
+ * Cost of answering alone, in cents: the cost with both the context-loading
+ * ("setup") and re-reading ("reused") shares taken out, so it lines up with
+ * those two being itemized separately. Accepts any record carrying the three
+ * cost fields (a UsageEvent or an AgentSpend), so the split is defined once.
  */
-export function answeringCostCents(e: UsageEvent): number {
+export function answeringCostCents(e: {
+  costCents?: number;
+  setupCostCents?: number;
+  reusedCostCents?: number;
+}): number {
   return Math.max(0, (e.costCents ?? 0) - (e.setupCostCents ?? 0) - (e.reusedCostCents ?? 0));
 }
 
