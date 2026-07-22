@@ -2,6 +2,17 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.25]
+
+- Added: conversation size, the amount resent to the model with every message.
+  This is what makes a long chat expensive: cost per message grows with the
+  conversation, and starting a new one is the only thing that resets it. Past
+  120k the tooltip says so. Anthropic's own guidance is to start a new
+  conversation when a long one nears your usage limit.
+- Measured from the most recent single call rather than the turn total. Summing a
+  turn's calls, correct for cost, would have reported this conversation as 4,632k
+  instead of 237k, because each call resends the same conversation.
+
 ## [0.2.24]
 
 - Added: a warning before credits start being spent, not after. Once a plan limit

@@ -205,6 +205,14 @@ export class StatusBar implements vscode.Disposable {
       }
       md.appendMarkdown(`\n\n`);
     }
+    if (data.contextTokens) {
+      md.appendMarkdown(`Conversation size: **${formatTokens(data.contextTokens)}**\n\n`);
+      // Every turn resends the whole conversation, so this number is the cost
+      // per message. Starting a new conversation is the only way to reset it.
+      if (data.contextTokens >= LARGE_CONTEXT_TOKENS) {
+        md.appendMarkdown(`⚠ _Each message resends all of this. A new conversation costs less per message._\n\n`);
+      }
+    }
     const others = data.agents.filter((a) => !a.isCurrent).slice(0, 4);
     if (others.length) {
       md.appendMarkdown(`Recent sessions:\n\n`);
@@ -259,6 +267,13 @@ export class StatusBar implements vscode.Disposable {
     this.items.clear();
   }
 }
+
+/**
+ * Where a conversation is big enough that its size dominates the cost of each
+ * further message. Set below even the smallest current context window, since
+ * the point is cost per message, not running out of room.
+ */
+const LARGE_CONTEXT_TOKENS = 120_000;
 
 /** Tokens spent answering: the total with the context-loading share removed. */
 function answeringTokens(total: number | undefined, setup: number | undefined): number {

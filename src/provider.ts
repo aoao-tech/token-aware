@@ -51,6 +51,13 @@ export interface ProviderData {
   monthlySetupTokens?: number;
   /** Real money spent past the plan's included usage, on subscription plans. */
   credits?: CreditSpend;
+  /**
+   * How large the current conversation has grown, in tokens sent on its most
+   * recent call. Every turn resends the whole thing, so this is what drives
+   * cost per message, and starting a fresh conversation is the one lever a
+   * user actually has over it.
+   */
+  contextTokens?: number;
   monthlyCostCents?: number;
   /**
    * Whether the monthly total lines up with this provider's actual billing

@@ -152,6 +152,7 @@ export class ClaudeProvider implements Provider {
       currentAgent,
       agents,
       lastCall: lastTurnEvent(scoped.length ? scoped : events),
+      contextTokens: conversationSize(scoped.length ? scoped : events),
       monthlyTokens,
       monthlyCacheTokens,
       monthlySetupTokens,
@@ -434,6 +435,20 @@ export class ClaudeProvider implements Provider {
  * event sharing the most recent event's (conversation, turn) pair, since
  * that's what a per-usage-billed user actually wants to know they spent.
  */
+/**
+ * How big the conversation has become, from the prompt of its most recent
+ * single call: everything resent that time. Deliberately not the turn total,
+ * which sums several calls that each resend the same conversation and would
+ * report a size far larger than the conversation actually is.
+ */
+function conversationSize(events: UsageEvent[]): number | undefined {
+  const last = events.at(-1);
+  if (!last) {
+    return undefined;
+  }
+  return last.inputTokens + last.cacheReadTokens + last.cacheWriteTokens;
+}
+
 function lastTurnEvent(events: UsageEvent[]): UsageEvent | undefined {
   const last = events.at(-1);
   if (!last || last.turn == null || !last.conversationId) {

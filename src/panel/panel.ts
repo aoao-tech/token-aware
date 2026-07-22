@@ -74,6 +74,15 @@ export class DetailsPanel implements vscode.Disposable {
           <div class="value">${cur ? amount(cur.costCents, cur.tokens) : "-"}</div>
           <div class="sub">${cur ? `${escapeHtml(this.label(cur))}` : "no active session"}</div>
         </div>
+        ${
+          d.contextTokens
+            ? `<div class="card">
+          <div class="label">Conversation size</div>
+          <div class="value">${formatTokens(d.contextTokens)}</div>
+          <div class="sub">resent with every message</div>
+        </div>`
+            : ""
+        }
         <div class="card">
           <div class="label">This month</div>
           <div class="value">${amount(d.monthlyCostCents, d.monthlyTokens)}</div>
