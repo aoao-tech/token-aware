@@ -1,12 +1,13 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { PlanLimit } from "./provider";
+import { CreditSpend, PlanLimit } from "./provider";
 
 /** A plan-limit reading shared by every window on this machine. */
 export interface StoredLimits {
   /** When the reading was taken. */
   at: number;
   limits: PlanLimit[];
+  credits?: CreditSpend;
   /** Don't call the endpoint again before this time (server-imposed). */
   retryUntil?: number;
 }

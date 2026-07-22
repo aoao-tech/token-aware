@@ -57,13 +57,12 @@ export class StatusBar implements vscode.Disposable {
     const fmtAmount = (costCents: number | undefined, tokens: number): string =>
       data.unit === "dollars" ? formatCents(costCents ?? 0) : formatTokens(tokens);
 
-    // Same rule as the last turn: in tokens mode the figure is what was
-    // actually said, not the context loaded to make saying it possible. A
-    // brand-new session's first reply loads tens of thousands of tokens of
-    // system prompt and tool definitions, and charging that to "hi" made the
-    // session total look invented.
+    // Session and month show the true total, context loading included: over a
+    // session that context is genuinely consumed and genuinely billed. Only
+    // the last turn strips it out, because there it gets misread as the cost
+    // of the message just typed.
     const cur = data.currentAgent;
-    const agent = `${fmtAmount(cur?.costCents, answeringTokens(cur?.tokens, cur?.setupTokens))} session`;
+    const agent = `${fmtAmount(cur?.costCents, cur?.tokens ?? 0)} session`;
     // On per-usage billing the headline is the true total charged, since
     // that's the number being paid; the tooltip and panel say where it went.
     // In tokens mode the headline is the reply instead, because folding in
@@ -80,10 +79,7 @@ export class StatusBar implements vscode.Disposable {
           // they typed, so it's itemized in the tooltip instead.
           `${formatTokens(replyTokens(lc))} last`
       : undefined;
-    const monthly = `${fmtAmount(
-      data.monthlyCostCents,
-      answeringTokens(data.monthlyTokens, data.monthlySetupTokens)
-    )} mo`;
+    const monthly = `${fmtAmount(data.monthlyCostCents, data.monthlyTokens)} mo`;
 
     const parts: string[] = [];
     if (mode !== "monthly") {
@@ -94,6 +90,12 @@ export class StatusBar implements vscode.Disposable {
     }
     if (mode !== "session" && data.monthlyMatchesBillingCycle !== false) {
       parts.push(monthly);
+    }
+    // Once past the plan's included usage, spend is real money at API rates.
+    // Only shown once it's above zero: a permanent "$0.00 credits" is noise,
+    // but the moment it starts costing is exactly what this tool is for.
+    if (data.credits && data.credits.usedCents > 0) {
+      parts.push(`${formatCents(data.credits.usedCents)} credits`);
     }
     const headline = this.headlineLimits(data);
     if (headline.length) {
@@ -156,14 +158,17 @@ export class StatusBar implements vscode.Disposable {
 
     const cur = data.currentAgent;
     if (cur) {
-      const curAnswering = answeringTokens(cur.tokens, cur.setupTokens);
       md.appendMarkdown(`Current session: **${this.label(cur)}**\n\n`);
       md.appendMarkdown(
-        `\u2937 ${this.amount(
+        `\u2937 **${this.amount(data.unit, cur.costCents, cur.tokens)}** \u00b7 ${this.amount(
           data.unit,
           Math.max(0, cur.costCents - cur.setupCostCents - cur.reusedCostCents),
-          curAnswering
-        )} answering \u00b7 ${this.amount(data.unit, cur.setupCostCents, cur.setupTokens)} loading context \u00b7 ${cur.count} calls\n\n`
+          answeringTokens(cur.tokens, cur.setupTokens)
+        )} answering + ${this.amount(
+          data.unit,
+          cur.setupCostCents,
+          cur.setupTokens
+        )} loading context \u00b7 ${cur.count} calls\n\n`
       );
     }
     const last = data.lastCall;
@@ -198,26 +203,23 @@ export class StatusBar implements vscode.Disposable {
     if (others.length) {
       md.appendMarkdown(`Recent sessions:\n\n`);
       for (const a of others) {
-        md.appendMarkdown(
-          `\u00b7 ${this.label(a)}: ${this.amount(
-            data.unit,
-            a.costCents,
-            answeringTokens(a.tokens, a.setupTokens)
-          )}\n\n`
-        );
+        md.appendMarkdown(`\u00b7 ${this.label(a)}: ${this.amount(data.unit, a.costCents, a.tokens)}\n\n`);
       }
     }
     md.appendMarkdown(
-      `This month: **${this.amount(
-        data.unit,
-        data.monthlyCostCents,
-        answeringTokens(data.monthlyTokens, data.monthlySetupTokens)
-      )}**${
+      `This month: **${this.amount(data.unit, data.monthlyCostCents, data.monthlyTokens)}**${
         data.monthlySetupTokens
           ? ` \u00b7 +${formatTokens(data.monthlySetupTokens)} loading context`
           : ""
       }${data.monthlyCacheTokens ? ` \u00b7 +${formatTokens(data.monthlyCacheTokens)} re-reading` : ""}\n\n`
     );
+    if (data.credits) {
+      const cap = data.credits.limitCents != null ? ` of ${formatCents(data.credits.limitCents)}` : "";
+      md.appendMarkdown(
+        `Usage credits: **${formatCents(data.credits.usedCents)}**${cap} this month\n\n`
+      );
+      md.appendMarkdown(`_Charged at API rates once plan limits run out_\n\n`);
+    }
     if (data.limits?.length) {
       md.appendMarkdown(`Plan limits:\n\n`);
       for (const l of data.limits) {

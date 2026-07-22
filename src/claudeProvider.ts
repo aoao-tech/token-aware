@@ -142,7 +142,7 @@ export class ClaudeProvider implements Provider {
       };
     }
 
-    const { limits, error: limitsError } = await this.getLimits();
+    const { limits, credits, error: limitsError } = await this.getLimits();
     const currentSessionModels: ModelAggregate[] | undefined = currentId
       ? aggregateModels(scoped.filter((e) => e.conversationId === currentId))
       : undefined;
@@ -159,6 +159,7 @@ export class ClaudeProvider implements Provider {
       models: aggregateModels(events),
       currentSessionModels,
       limits,
+      credits,
       limitsError,
       quotaPct: limits?.length ? Math.max(...limits.map((l) => l.pct)) : undefined,
     };
@@ -180,14 +181,14 @@ export class ClaudeProvider implements Provider {
     const waiting = shared?.retryUntil != null && now < shared.retryUntil;
     if (shared && (waiting || now - shared.at < LIMITS_TTL_MS)) {
       return shared.limits.length
-        ? { limits: shared.limits }
+        ? { limits: shared.limits, credits: shared.credits }
         : { error: "usage lookup rate-limited" };
     }
 
     const result = await fetchClaudeLimits();
     if (result.limits?.length) {
       this.lastGoodLimits = result.limits;
-      this.limitsStore.write({ at: now, limits: result.limits });
+      this.limitsStore.write({ at: now, limits: result.limits, credits: result.credits });
       return result;
     }
 

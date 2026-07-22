@@ -13,6 +13,20 @@ export interface PlanLimit {
   kind: "session" | "weekly-all" | "weekly-model" | "other";
 }
 
+/**
+ * Money spent past a subscription's included usage. Once plan limits are
+ * exhausted, further usage bills at standard API rates against usage credits,
+ * so even a flat-fee plan can run up a real bill worth seeing.
+ */
+export interface CreditSpend {
+  /** Spent so far this month, in cents. */
+  usedCents: number;
+  /** The monthly cap set on credit spend, in cents, if there is one. */
+  limitCents?: number;
+  /** 0..100 percent of the cap used. */
+  pct?: number;
+}
+
 /** Normalized data every provider produces, consumed by the shared UI. */
 export interface ProviderData {
   id: string;
@@ -35,6 +49,8 @@ export interface ProviderData {
   monthlyCacheTokens?: number;
   /** The share of monthlyTokens spent loading context rather than answering. */
   monthlySetupTokens?: number;
+  /** Real money spent past the plan's included usage, on subscription plans. */
+  credits?: CreditSpend;
   monthlyCostCents?: number;
   /**
    * Whether the monthly total lines up with this provider's actual billing

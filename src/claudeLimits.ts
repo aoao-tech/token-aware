@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import { PlanLimit } from "./provider";
+import { CreditSpend, PlanLimit } from "./provider";
 import { titleCase } from "./util";
 
 const execFileAsync = promisify(execFile);
@@ -22,6 +22,8 @@ const DEFAULT_RETRY_MS = 5 * 60_000;
 
 export interface ClaudeLimitsResult {
   limits?: PlanLimit[];
+  /** Spend past the plan's included usage, billed at API rates. */
+  credits?: CreditSpend;
   /** Set only for unexpected failures; absence of credentials is not an error. */
   error?: string;
   /**
@@ -130,10 +132,12 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
     return { error: `usage request failed: ${err instanceof Error ? err.message : String(err)}` };
   }
 
+  const credits = parseCreditSpend(data.spend);
+
   // Preferred: the structured `limits` array (includes model-scoped buckets).
   const structured = parseStructuredLimits(data.limits);
   if (structured.length) {
-    return { limits: structured };
+    return { limits: structured, credits };
   }
 
   // Fallback for older response shapes: top-level utilization buckets.
@@ -152,7 +156,38 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
       resetsAt: Number.isNaN(resetsAt) ? undefined : resetsAt,
     });
   }
-  return limits.length ? { limits } : { error: "usage response had no recognizable limit buckets" };
+  return limits.length
+    ? { limits, credits }
+    : { error: "usage response had no recognizable limit buckets" };
+}
+
+/**
+ * Spend past the included allowance. Amounts arrive as minor units with an
+ * exponent, so they're normalized to cents rather than assumed to be cents.
+ */
+function parseCreditSpend(raw: unknown): CreditSpend | undefined {
+  const spend = raw as Record<string, unknown> | undefined;
+  if (!spend || typeof spend !== "object" || spend.enabled !== true) {
+    return undefined;
+  }
+  const cents = (v: unknown): number | undefined => {
+    const money = v as Record<string, unknown> | undefined;
+    const minor = money?.amount_minor;
+    if (typeof minor !== "number") {
+      return undefined;
+    }
+    const exponent = typeof money?.exponent === "number" ? money.exponent : 2;
+    return Math.round(minor * Math.pow(10, 2 - exponent));
+  };
+  const usedCents = cents(spend.used);
+  if (usedCents == null) {
+    return undefined;
+  }
+  return {
+    usedCents,
+    limitCents: cents(spend.limit),
+    pct: typeof spend.percent === "number" ? spend.percent : undefined,
+  };
 }
 
 function parseStructuredLimits(raw: unknown): PlanLimit[] {

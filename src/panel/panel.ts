@@ -71,15 +71,12 @@ export class DetailsPanel implements vscode.Disposable {
       <div class="cards">
         <div class="card">
           <div class="label">Current session</div>
-          <div class="value">${cur ? amount(cur.costCents, answering(cur.tokens, cur.setupTokens)) : "-"}</div>
+          <div class="value">${cur ? amount(cur.costCents, cur.tokens) : "-"}</div>
           <div class="sub">${cur ? `${escapeHtml(this.label(cur))}` : "no active session"}</div>
         </div>
         <div class="card">
           <div class="label">This month</div>
-          <div class="value">${amount(
-            d.monthlyCostCents,
-            answering(d.monthlyTokens, d.monthlySetupTokens)
-          )}</div>
+          <div class="value">${amount(d.monthlyCostCents, d.monthlyTokens)}</div>
           <div class="sub">${
             d.monthlySetupTokens ? `${formatTokens(d.monthlySetupTokens)} loading context · ` : ""
           }${formatTokens(d.monthlyCacheTokens ?? 0)} re-reading</div>
@@ -125,6 +122,16 @@ export class DetailsPanel implements vscode.Disposable {
                   )}</td>${showCost ? `<td>${formatCents(m.costCents)}</td>` : ""}</tr>`
               )
               .join("")}</table>`
+          : ""
+      }
+
+      ${
+        d.credits
+          ? `<h2>Usage credits</h2><table><tr><td>Spent this month</td><td><div class="bar"><div style="width:${Math.round(
+              Math.min(100, d.credits.pct ?? 0)
+            )}%"></div></div></td><td>${formatCents(d.credits.usedCents)}${
+              d.credits.limitCents != null ? ` of ${formatCents(d.credits.limitCents)}` : ""
+            }</td></tr></table><p class="sub">Usage past your plan's included limits is charged at API rates.</p>`
           : ""
       }
 

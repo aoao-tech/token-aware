@@ -2,6 +2,22 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.23]
+
+- Added: usage credit spend for subscription plans. Once a plan's included usage
+  runs out, further usage is billed at standard API rates, and that applies to
+  Claude Code as well as chat. The amount appears in the status bar as soon as it
+  is above zero, with the monthly cap in the tooltip and details panel. A flat
+  monthly plan is not a guarantee of a flat monthly bill, and that is worth seeing
+  before the invoice does.
+- Reverted, from 0.2.22: session and monthly figures show the true total again,
+  context loading included. Over a session that context is genuinely consumed and
+  genuinely billed, so removing it there was hiding real usage. Only the last turn
+  strips it out, which is where it was being misread as the cost of a single
+  message.
+- Kept from 0.2.22: the details panel's split of answering, loading context, and
+  re-reading context into separate columns.
+
 ## [0.2.22]
 
 - Changed: session and monthly figures now follow the same rule as the last turn.
