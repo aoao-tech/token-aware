@@ -126,7 +126,13 @@ export class StatusBar implements vscode.Disposable {
 
   private pickBackground(data: ProviderData): vscode.ThemeColor | undefined {
     const headline = this.headlineLimits(data);
-    const pct = headline.length ? Math.max(...headline.map((l) => l.pct)) : data.quotaPct;
+    const candidates = headline.map((l) => l.pct);
+    // Nearing the monthly credit cap deserves the same warning as nearing a
+    // plan limit: it's the ceiling on real money, not just on throughput.
+    if (data.credits?.pct != null && data.credits.usedCents > 0) {
+      candidates.push(data.credits.pct);
+    }
+    const pct = candidates.length ? Math.max(...candidates) : data.quotaPct;
     if (pct == null) {
       return undefined;
     }
@@ -218,7 +224,14 @@ export class StatusBar implements vscode.Disposable {
       md.appendMarkdown(
         `Usage credits: **${formatCents(data.credits.usedCents)}**${cap} this month\n\n`
       );
-      md.appendMarkdown(`_Charged at API rates once plan limits run out_\n\n`);
+      // The useful warning isn't "you spent money", it's "the next message is
+      // the one that starts costing", which is knowable before it happens.
+      const atLimit = this.headlineLimits(data).some((l) => l.pct >= 90);
+      md.appendMarkdown(
+        atLimit
+          ? `⚠ _Near your plan limit. Usage past it bills to credits at API rates._\n\n`
+          : `_Usage past your plan limit bills to credits at API rates._\n\n`
+      );
     }
     if (data.limits?.length) {
       md.appendMarkdown(`Plan limits:\n\n`);

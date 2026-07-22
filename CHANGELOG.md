@@ -2,6 +2,19 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.24]
+
+- Added: a warning before credits start being spent, not after. Once a plan limit
+  passes 90% the tooltip says that usage beyond it bills to credits at API rates.
+  Knowing the next message is the one that starts costing is worth more than being
+  told afterwards that it did.
+- Added: nearing the monthly credit cap now colors the status bar the same way
+  nearing a plan limit does. It is the ceiling on real money, not just throughput.
+- Note: the usage endpoint reports credit spend and the monthly cap, but returns
+  no credit balance, no promotional credit, and no reset date, so those are not
+  shown rather than guessed at. They are visible at claude.ai under Settings,
+  Usage.
+
 ## [0.2.23]
 
 - Added: usage credit spend for subscription plans. Once a plan's included usage
