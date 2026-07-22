@@ -14,13 +14,13 @@ function shouldTrack(setting: ToggleSetting, detected: boolean): boolean {
 }
 
 /** Only build providers for tools that exist on this machine (unless forced). */
-function buildProviders(config: TrackerConfig): Provider[] {
+function buildProviders(config: TrackerConfig, storageDir: string | undefined): Provider[] {
   const providers: Provider[] = [];
   if (shouldTrack(config.cursorEnabled, getStateDbPath() !== undefined)) {
     providers.push(new CursorProvider());
   }
   if (shouldTrack(config.claudeEnabled, fs.existsSync(claudeDataDir()))) {
-    providers.push(new ClaudeProvider());
+    providers.push(new ClaudeProvider(storageDir));
   }
   return providers;
 }
@@ -29,8 +29,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const tracker = new Tracker();
   const statusBar = new StatusBar();
   let config = getConfig();
+  // Shared across every window, since the plan-limit endpoint rate-limits per
+  // account rather than per window.
+  const storageDir = context.globalStorageUri?.fsPath;
 
-  tracker.setProviders(buildProviders(config));
+  tracker.setProviders(buildProviders(config, storageDir));
 
   context.subscriptions.push(
     tracker.onDidUpdate((map) => {
@@ -49,7 +52,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     onConfigChange(() => {
       config = getConfig();
-      tracker.setProviders(buildProviders(config));
+      tracker.setProviders(buildProviders(config, storageDir));
       tracker.restart(config.pollIntervalSeconds, config.instantRefreshOnTurn);
     })
   );

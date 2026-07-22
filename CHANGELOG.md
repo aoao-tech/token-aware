@@ -2,6 +2,15 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.21]
+
+- Fixed: open windows no longer rate-limit each other out of the plan-limit gauges.
+  The endpoint limits per account, not per window, so each window polling on its own
+  could lock the others out. They now share one reading on disk, and a window that
+  gets told to wait records the deadline so the others don't go and earn their own.
+- Added: the gauges appear immediately when a window opens, from the shared reading,
+  instead of staying blank until that window's first successful call.
+
 ## [0.2.20]
 
 - Fixed: the plan-limit gauges disappearing mid-session. The usage endpoint allows

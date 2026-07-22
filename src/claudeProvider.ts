@@ -7,6 +7,7 @@ import { ClaudeLimitsResult, fetchClaudeLimits } from "./claudeLimits";
 import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
 import { AgentScope, getConfig, UnitSetting } from "./config";
+import { LimitsStore } from "./limitsStore";
 import { PlanLimit, Provider, ProviderData, ProviderUnit } from "./provider";
 import { ModelAggregate, UsageEvent } from "./types";
 import { freshTokens } from "./util";
@@ -44,9 +45,13 @@ export class ClaudeProvider implements Provider {
   private currentId: string | undefined;
   private plan: ClaudePlan | undefined;
   private planChecked = false;
-  private limitsCache: { at: number; result: ClaudeLimitsResult } | undefined;
   /** Last successful reading, kept so a failed lookup doesn't blank the gauges. */
   private lastGoodLimits: PlanLimit[] | undefined;
+  private readonly limitsStore: LimitsStore;
+
+  constructor(storageDir?: string) {
+    this.limitsStore = new LimitsStore(storageDir);
+  }
   private readonly fileCache = new Map<string, FileCacheEntry>();
   private readonly sessionMeta = new Map<string, SessionMeta>();
 
@@ -161,28 +166,43 @@ export class ClaudeProvider implements Provider {
    */
   private async getLimits(): Promise<ClaudeLimitsResult> {
     const now = Date.now();
-    const cached = this.limitsCache;
-    if (cached) {
-      const ttl = cached.result.retryAfterMs ?? (cached.result.error ? RETRY_MS : LIMITS_TTL_MS);
-      if (now - cached.at < ttl) {
-        return cached.result;
-      }
+    const shared = this.limitsStore.read();
+    if (shared?.limits.length) {
+      this.lastGoodLimits = shared.limits;
     }
+
+    const waiting = shared?.retryUntil != null && now < shared.retryUntil;
+    if (shared && (waiting || now - shared.at < LIMITS_TTL_MS)) {
+      return shared.limits.length
+        ? { limits: shared.limits }
+        : { error: "usage lookup rate-limited" };
+    }
+
     const result = await fetchClaudeLimits();
     if (result.limits?.length) {
       this.lastGoodLimits = result.limits;
-    } else if (this.lastGoodLimits) {
-      // A lookup failing doesn't mean the numbers changed. Keep showing the
-      // last good reading rather than making the gauges disappear and look
-      // like they were never real.
-      result.limits = this.lastGoodLimits;
+      this.limitsStore.write({ at: now, limits: result.limits });
+      return result;
+    }
+
+    // A lookup failing doesn't mean the numbers changed. Keep showing the last
+    // good reading rather than making the gauges disappear and look like they
+    // were never real.
+    const keep = this.lastGoodLimits ?? shared?.limits;
+    if (keep?.length) {
+      result.limits = keep;
       if (result.retryAfterMs) {
-        // Being asked to wait is routine and we still have good numbers, so
-        // there's nothing here worth warning about.
+        // Being asked to wait is routine and the numbers are still good, so
+        // there is nothing here worth warning about.
         result.error = undefined;
       }
     }
-    this.limitsCache = { at: now, result };
+    // Record the wait so other windows don't each go and earn their own 429.
+    this.limitsStore.write({
+      at: shared?.at ?? 0,
+      limits: keep ?? [],
+      retryUntil: now + (result.retryAfterMs ?? RETRY_MS),
+    });
     return result;
   }
 
