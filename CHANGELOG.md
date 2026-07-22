@@ -2,6 +2,18 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.20]
+
+- Fixed: the plan-limit gauges disappearing mid-session. The usage endpoint allows
+  only a handful of calls before returning HTTP 429 with a five minute Retry-After,
+  and the extension was asking every 60 seconds. It rate-limited itself within
+  minutes of every startup and then stayed locked out, so the gauges vanished and
+  the extension was the cause. A good reading is now reused for 10 minutes, which
+  is far more often than percentages measured over 5-hour and weekly windows can
+  meaningfully change.
+- Added: Retry-After is now honored rather than guessed at, and being asked to wait
+  is no longer reported as an error when the last good reading is still on screen.
+
 ## [0.2.19]
 
 - Fixed: a failed plan-limit lookup no longer blanks the gauges. The last successful

@@ -17,10 +17,19 @@ const execFileAsync = promisify(execFile);
  */
 const USAGE_URL = "https://api.anthropic.com/api/oauth/usage";
 
+/** Fallback wait when the server rate-limits us without saying for how long. */
+const DEFAULT_RETRY_MS = 5 * 60_000;
+
 export interface ClaudeLimitsResult {
   limits?: PlanLimit[];
   /** Set only for unexpected failures; absence of credentials is not an error. */
   error?: string;
+  /**
+   * How long the server asked us to wait before asking again. The usage
+   * endpoint allows only a handful of calls before returning 429 with a
+   * Retry-After, so this is honored rather than guessed at.
+   */
+  retryAfterMs?: number;
 }
 
 interface OAuthCreds {
@@ -106,6 +115,13 @@ export async function fetchClaudeLimits(): Promise<ClaudeLimitsResult> {
       },
       signal: AbortSignal.timeout(7000),
     });
+    if (res.status === 429) {
+      const secs = Number(res.headers.get("retry-after"));
+      return {
+        error: "usage lookup rate-limited",
+        retryAfterMs: Number.isFinite(secs) && secs > 0 ? secs * 1000 : DEFAULT_RETRY_MS,
+      };
+    }
     if (!res.ok) {
       return { error: `usage endpoint returned HTTP ${res.status}` };
     }

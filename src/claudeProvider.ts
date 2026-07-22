@@ -30,6 +30,11 @@ export function claudeDataDir(): string {
   return path.join(os.homedir(), ".claude", "projects");
 }
 
+/** How long a good plan-limit reading is reused. These percentages move over hours. */
+const LIMITS_TTL_MS = 10 * 60_000;
+/** How long to wait after a failure the server didn't put a time on. */
+const RETRY_MS = 5 * 60_000;
+
 export class ClaudeProvider implements Provider {
   readonly id = "claude";
   readonly label = "Claude";
@@ -148,23 +153,34 @@ export class ClaudeProvider implements Provider {
     };
   }
 
-  /** Plan-limit gauges, cached briefly so polling doesn't hammer the endpoint. */
+  /**
+   * Plan-limit gauges. The usage endpoint tolerates only a few calls before
+   * rate-limiting for five minutes, and these percentages move over hours,
+   * so this asks rarely and reuses the answer. Refreshing every poll bought
+   * nothing and cost the gauges entirely.
+   */
   private async getLimits(): Promise<ClaudeLimitsResult> {
     const now = Date.now();
-    // Back off after a failure: the endpoint is unofficial and polling it
-    // harder is the wrong response to it saying no.
-    const ttl = this.limitsCache?.result.error ? 5 * 60_000 : 60_000;
-    if (this.limitsCache && now - this.limitsCache.at < ttl) {
-      return this.limitsCache.result;
+    const cached = this.limitsCache;
+    if (cached) {
+      const ttl = cached.result.retryAfterMs ?? (cached.result.error ? RETRY_MS : LIMITS_TTL_MS);
+      if (now - cached.at < ttl) {
+        return cached.result;
+      }
     }
     const result = await fetchClaudeLimits();
     if (result.limits?.length) {
       this.lastGoodLimits = result.limits;
     } else if (this.lastGoodLimits) {
       // A lookup failing doesn't mean the numbers changed. Keep showing the
-      // last good reading and report the failure alongside it, rather than
-      // making the gauges disappear and look like they were never real.
+      // last good reading rather than making the gauges disappear and look
+      // like they were never real.
       result.limits = this.lastGoodLimits;
+      if (result.retryAfterMs) {
+        // Being asked to wait is routine and we still have good numbers, so
+        // there's nothing here worth warning about.
+        result.error = undefined;
+      }
     }
     this.limitsCache = { at: now, result };
     return result;
