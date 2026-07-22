@@ -10,37 +10,29 @@ don't appear.
 
 ## What it does
 
-- One status bar item per detected tool, e.g. `⚡ $1.93 session · $0.42 last · $1301.81 mo · 62%`
-  (Cursor, `mo` is a real calendar-month total, `%` is the premium-request quota) and
-  `✨ 45.2k session · 922 last · 43% session · 9% week` (Claude, no monthly figure since
-  Claude's plan limits reset on rolling 5h/7-day windows rather than the calendar month).
-- **Auto plan detection**: figures out whether you're on a flat monthly plan (Claude
-  Free/Pro/Max, Cursor individual plans → shows tokens) or per-usage billing (API keys,
-  Claude Team/Enterprise seats, Cursor enterprise/business → shows dollars). Signing in
-  to Claude with corporate SSO under an org's per-usage contract is detected the same
-  way as an API key; you never need to hold an API key yourself. Manual override
-  available if it guesses wrong.
-- **Per-session spend**: tracks the session you're currently working in. It becomes
-  "current" the moment you send a message in it.
-- **Last turn, not last call**: a single reply is often several tool-call round trips
-  to the model, each its own differently-sized request. "Last" sums everything since
-  your last real message, so the number reflects what that message actually cost
-  instead of jumping between unrelated sub-call sizes.
-- Updates on a poll interval **and** instantly right after each AI turn.
-- Click it for a details panel: current session, spend-by-session table, monthly
-  totals, top models, and a per-model breakdown of just the current session (so a
-  large session total is explainable, not just a number), per tool.
-- Claude session list is scoped to your open workspace by default (background runs,
-  subagents, and other projects are excluded from the list; monthly totals still
-  count everything).
-- **Plan-limit gauges** (Claude subscription plans): the same session (5h) and
-  weekly usage percentages shown at claude.ai → Settings → Usage, right in the
-  status bar, with warning colors at 90% and 100%.
-- **Honest token counting**: the headline number is tokens the model *newly
-  processed* (fresh input + output + cache writes). Cache reads (the whole
-  conversation context re-served from the prompt cache on every call, at ~10% of
-  the input price) are shown separately as "cached" so a 200-token reply doesn't
-  masquerade as a 100k-token call.
+- One status bar item per detected tool:
+  - `⚡ $1.93 session · $0.42 last · $1301.81 mo · 62%` (Cursor)
+  - `✨ 45.2k session · 922 last · 43% session · 9% week` (Claude)
+- **Auto plan detection**: dollars if you're billed per usage, tokens if you're on a
+  flat monthly plan. Signing in with corporate SSO under an organization's per-usage
+  contract is detected too, so you never need to hold an API key yourself. Manual
+  override if it guesses wrong.
+- **Per-session spend**: tracks the session you're working in. It becomes "current"
+  the moment you send a message in it.
+- **The cost of your message, not your last API call**: one reply is often many
+  round trips to the model. "Last" covers everything since you hit enter, so it
+  answers "what did that cost me" instead of flickering between sub-calls.
+- **Where the cost actually went**: hover for the split between answering your
+  message, loading context in, and re-reading context already loaded. On a long
+  conversation the last one is usually the biggest share, which is the part most
+  people don't expect.
+- **Plan-limit gauges** (Claude subscription plans): the session and weekly
+  percentages from claude.ai → Settings → Usage, with warning colors at 90% and 100%.
+- Updates on a poll interval **and** instantly after each AI turn.
+- Click for a details panel: current session, spend by session, monthly totals, top
+  models, and a per-model breakdown of the current session.
+- Claude session list is scoped to your open workspace by default. Monthly totals
+  still count everything.
 
 ## How it works
 

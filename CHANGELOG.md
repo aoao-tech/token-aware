@@ -2,6 +2,20 @@
 
 All notable changes to the **Token Aware** extension are documented in this file.
 
+## [0.2.19]
+
+- Fixed: a failed plan-limit lookup no longer blanks the gauges. The last successful
+  reading stays on screen with the failure reported next to it, since the lookup
+  failing doesn't mean the numbers changed.
+- Fixed: the reason is now shown in the details panel, not only in the status bar
+  tooltip, so diagnosing it doesn't require knowing to hover.
+- Changed: back off to a 5 minute retry after a failed lookup instead of retrying
+  every minute. The endpoint is unofficial and polling it harder is the wrong
+  response to it saying no.
+- Docs: trimmed implementation asides from the README's feature list. Why Claude has
+  no calendar-month figure is a design note, not something a reader needs while
+  working out what the project is.
+
 ## [0.2.18]
 
 - Changed: the status bar shows one figure for the last turn again. 0.2.17 put

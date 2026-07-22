@@ -7,7 +7,7 @@ import { ClaudeLimitsResult, fetchClaudeLimits } from "./claudeLimits";
 import { ClaudePlan, detectClaudePlan } from "./claudePlan";
 import { claudeCostCents } from "./claudePricing";
 import { AgentScope, getConfig, UnitSetting } from "./config";
-import { Provider, ProviderData, ProviderUnit } from "./provider";
+import { PlanLimit, Provider, ProviderData, ProviderUnit } from "./provider";
 import { ModelAggregate, UsageEvent } from "./types";
 import { freshTokens } from "./util";
 import { JsonlWatcher } from "./watcher";
@@ -40,6 +40,8 @@ export class ClaudeProvider implements Provider {
   private plan: ClaudePlan | undefined;
   private planChecked = false;
   private limitsCache: { at: number; result: ClaudeLimitsResult } | undefined;
+  /** Last successful reading, kept so a failed lookup doesn't blank the gauges. */
+  private lastGoodLimits: PlanLimit[] | undefined;
   private readonly fileCache = new Map<string, FileCacheEntry>();
   private readonly sessionMeta = new Map<string, SessionMeta>();
 
@@ -149,10 +151,21 @@ export class ClaudeProvider implements Provider {
   /** Plan-limit gauges, cached briefly so polling doesn't hammer the endpoint. */
   private async getLimits(): Promise<ClaudeLimitsResult> {
     const now = Date.now();
-    if (this.limitsCache && now - this.limitsCache.at < 60_000) {
+    // Back off after a failure: the endpoint is unofficial and polling it
+    // harder is the wrong response to it saying no.
+    const ttl = this.limitsCache?.result.error ? 5 * 60_000 : 60_000;
+    if (this.limitsCache && now - this.limitsCache.at < ttl) {
       return this.limitsCache.result;
     }
     const result = await fetchClaudeLimits();
+    if (result.limits?.length) {
+      this.lastGoodLimits = result.limits;
+    } else if (this.lastGoodLimits) {
+      // A lookup failing doesn't mean the numbers changed. Keep showing the
+      // last good reading and report the failure alongside it, rather than
+      // making the gauges disappear and look like they were never real.
+      result.limits = this.lastGoodLimits;
+    }
     this.limitsCache = { at: now, result };
     return result;
   }
